@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { roll, sanitizeFormula } from "./dice";
+import { roll, sanitizeFormula, supportsRollMode } from "./dice";
 
 describe("dice", () => {
   it("accetta la notazione supportata", () => {
@@ -23,6 +23,25 @@ describe("dice", () => {
       return array;
     });
     expect(roll("1d20+5", "advantage")).toMatchObject({ total: 20, dice: [5, 15] });
+    vi.restoreAllMocks();
+  });
+
+  it("riconosce i tiri che accettano vantaggio", () => {
+    expect(supportsRollMode("1d20+5")).toBe(true);
+    expect(supportsRollMode("d20+5")).toBe(true);
+    expect(supportsRollMode(" 1d20 - 1 ")).toBe(true);
+    expect(supportsRollMode("2d6+3")).toBe(false);
+    expect(supportsRollMode("2d20")).toBe(false);
+    expect(supportsRollMode("1d8+3;drop")).toBe(false);
+  });
+
+  it("applica vantaggio anche senza il conteggio esplicito", () => {
+    let value = 0;
+    vi.spyOn(crypto, "getRandomValues").mockImplementation((array) => {
+      (array as Uint32Array)[0] = value++ === 0 ? 4 : 14;
+      return array;
+    });
+    expect(roll("d20+5", "advantage")).toMatchObject({ total: 20, dice: [5, 15] });
     vi.restoreAllMocks();
   });
 });

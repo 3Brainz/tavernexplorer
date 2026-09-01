@@ -51,12 +51,19 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
 - Schede, bestiario, avventure e ultimi 200 messaggi: storage locale del browser.
 - Turn order: metadata della stanza Owlbear, sincronizzati con i partecipanti.
 - Inventario comune: metadata della stanza Owlbear, con copia locale di sicurezza.
-- Party: le schede locali vengono pubblicate in forma compatta nei metadata del
-  giocatore e sono consultabili dal GM nella sezione Party.
+- Party: le schede complete sono pubblicate nei metadata della stanza e sono
+  consultabili da tutto il party. La modifica resta riservata al proprietario,
+  al DM e ai giocatori che il proprietario o il DM delegano dalla scheda stessa.
+  Un riassunto compatto resta nei metadata del giocatore per compatibilita'.
 - Turn order e messaggi possono essere aperti come pannelli flottanti sulla mappa.
 - Le mappe individuate nelle avventure 5e.tools possono essere caricate
   direttamente come scene Owlbear.
-- Collegamento token/scheda: metadata del token.
+- Collegamento token/scheda: metadata del token. Dal Party il DM assegna una
+  scheda al token selezionato, la scollega o ne trasferisce la proprieta' a un
+  altro giocatore.
+- Import bestiario: ogni mostro importato genera anche un token caricato come
+  asset `CHARACTER` con nome `beasts/<nome>`. Quando il mirror non espone
+  l'immagine viene generato un token di riserva con le iniziali del mostro.
 - Nuovi messaggi e risultati: broadcast effimero Owlbear.
 
 I contenuti 5e.tools vengono richiesti dal mirror sorgente pubblico del progetto
@@ -86,10 +93,29 @@ Da **Libreria → Esporta tutto** si scarica un file versionato conforme a
 comune, messaggi e stato dei turni. Lo stesso pulsante d'importazione accetta
 sia export Roll20 sia TavernPack.
 
-## Limiti della versione 0.1
+## Tiri di dado
+
+Ogni formula `d20` con modificatore apre una scelta Normale / Vantaggio /
+Svantaggio prima del tiro; le altre formule (danni compresi) tirano subito con la
+modalita' selezionata nella scheda. Il risultato viene scritto nel log dei
+messaggi, notificato via Owlbear e, quando la visibilita' e' "Tutti" e il
+personaggio ha un token collegato, mostrato per qualche secondo sulla mappa
+accanto al token.
+
+L'SDK Owlbear 3.1 non espone API per il dado 3D della piattaforma: i tiri usano
+il generatore crittografico del browser e le API Owlbear disponibili
+(`broadcast`, `notification`, `scene.items`).
+
+## Limiti della versione 0.3
 
 - L'importatore richiede il blocco `normalized` di `roll20-sheet-export`.
 - Le formule ricavate dalle descrizioni vengono segnalate nelle note d'import.
-- I tiri usano il generatore crittografico del browser e il risultato viene
-  condiviso nel log; non sono ancora renderizzati come dadi 3D.
+- I tiri non sono renderizzati come dadi 3D: l'SDK non espone il dado di Owlbear.
+- L'SDK non permette di creare cartelle di asset: i token del bestiario usano il
+  prefisso `beasts/` nel nome, non una cartella reale.
+- Le schede condivise vivono nei metadata della stanza: se la stanza viene
+  eliminata restano solo le copie locali dei rispettivi proprietari.
+- I permessi di modifica sono applicati dall'interfaccia. I metadata della stanza
+  sono scrivibili da ogni client collegato e l'SDK non offre controlli per
+  chiave: proteggono dalle modifiche accidentali, non da un client ostile.
 - Lo storico non viene recuperato da chi entra nella stanza dopo l'invio.

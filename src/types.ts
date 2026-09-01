@@ -163,6 +163,15 @@ export interface CampaignChapter {
   images: Array<{ title: string; url: string; kind: "map" | "mapPlayer" | "image" }>;
 }
 
+// Scheda condivisa nella room: visibile a tutti, scrivibile da owner, GM e delegati.
+export interface SharedSheet {
+  sheet: CharacterSheet;
+  ownerId: string;
+  ownerName: string;
+  editors: string[];
+  updatedAt: number;
+}
+
 export interface PartyCharacterSummary {
   id: string; ownerId: string; ownerName: string; name: string; avatar?: string;
   classDisplay: string; race: string; level: number; ruleset: { id: string; version: string };

@@ -87,7 +87,9 @@ function readType(value: unknown): string {
 function imageUrl(monster: Obj): string | undefined {
   const token = obj(monster.tokenUrl ?? monster.token);
   const direct = text(monster.tokenUrl || monster.image);
-  return direct || text(token.url) || undefined;
+  if (direct || text(token.url)) return direct || text(token.url);
+  if (monster.hasToken) return `https://raw.githubusercontent.com/5etools-mirror-3/5etools-img/main/bestiary/tokens/${encodeURIComponent(text(monster.source))}/${encodeURIComponent(text(monster.name))}.webp`;
+  return undefined;
 }
 
 export function import5eToolsMonsters(source: unknown): MonsterSheet[] {
