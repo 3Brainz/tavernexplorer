@@ -1,0 +1,28 @@
+import { describe, expect, it, vi } from "vitest";
+import { roll, sanitizeFormula } from "./dice";
+
+describe("dice", () => {
+  it("accetta la notazione supportata", () => {
+    expect(sanitizeFormula(" 2d6 + 3 ")).toBe("2d6+3");
+    expect(() => sanitizeFormula("2d6;alert(1)")).toThrow();
+  });
+
+  it("calcola formule con dadi e modificatori", () => {
+    vi.spyOn(crypto, "getRandomValues").mockImplementation((array) => {
+      (array as Uint32Array)[0] = 3;
+      return array;
+    });
+    expect(roll("2d6+3")).toMatchObject({ total: 11, dice: [4, 4] });
+    vi.restoreAllMocks();
+  });
+
+  it("applica vantaggio ai test d20", () => {
+    let value = 0;
+    vi.spyOn(crypto, "getRandomValues").mockImplementation((array) => {
+      (array as Uint32Array)[0] = value++ === 0 ? 4 : 14;
+      return array;
+    });
+    expect(roll("1d20+5", "advantage")).toMatchObject({ total: 20, dice: [5, 15] });
+    vi.restoreAllMocks();
+  });
+});

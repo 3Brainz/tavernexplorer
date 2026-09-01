@@ -1,0 +1,9 @@
+node_modules/
+.pnpm-store/
+dist/
+.DS_Store
+.env
+.env.*
+!.env.example
+.vercel/
+package-lock.json

@@ -1,0 +1,55 @@
+import type { RollMode } from "./types";
+
+export interface RollResult {
+  formula: string;
+  total: number;
+  dice: number[];
+}
+
+function randomInt(max: number): number {
+  const values = new Uint32Array(1);
+  crypto.getRandomValues(values);
+  return (values[0] % max) + 1;
+}
+
+export function sanitizeFormula(formula: string): string {
+  const clean = formula.replace(/\[[^\]]*]/g, "").replace(/\s+/g, "").toLowerCase();
+  if (!/^[0-9d+\-()]+$/.test(clean)) throw new Error("Formula non supportata");
+  return clean;
+}
+
+function rollSimple(formula: string): RollResult {
+  const clean = sanitizeFormula(formula).replace(/[()]/g, "");
+  const parts = clean.match(/[+-]?[^+-]+/g) ?? [];
+  const dice: number[] = [];
+  let total = 0;
+  for (const raw of parts) {
+    const sign = raw.startsWith("-") ? -1 : 1;
+    const part = raw.replace(/^[+-]/, "");
+    const die = /^(\d*)d(\d+)$/.exec(part);
+    if (die) {
+      const count = Number(die[1] || 1);
+      const faces = Number(die[2]);
+      if (count < 1 || count > 100 || faces < 2 || faces > 1000) throw new Error("Dadi fuori limite");
+      for (let index = 0; index < count; index += 1) {
+        const value = randomInt(faces);
+        dice.push(value);
+        total += value * sign;
+      }
+    } else {
+      total += Number(part) * sign;
+    }
+  }
+  if (!Number.isFinite(total)) throw new Error("Formula non valida");
+  return { formula: clean, total, dice };
+}
+
+export function roll(formula: string, mode: RollMode = "normal"): RollResult {
+  const clean = sanitizeFormula(formula);
+  if (mode === "normal" || !/^1d20([+-]\d+)?$/.test(clean)) return rollSimple(clean);
+  const modifier = Number(clean.match(/[+-]\d+$/)?.[0] ?? 0);
+  const first = randomInt(20);
+  const second = randomInt(20);
+  const kept = mode === "advantage" ? Math.max(first, second) : Math.min(first, second);
+  return { formula: `${mode === "advantage" ? "2d20kh1" : "2d20kl1"}${modifier >= 0 ? "+" : ""}${modifier}`, total: kept + modifier, dice: [first, second] };
+}

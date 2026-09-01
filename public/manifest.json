@@ -1,0 +1,16 @@
+{
+  "name": "TavernExplorer",
+  "version": "0.1.0",
+  "manifest_version": 1,
+  "description": "Schede D&D 2024, turn order, tiri e messaggi per Owlbear Rodeo",
+  "author": "TavernExplorer",
+  "icon": "/icon.svg",
+  "action": {
+    "title": "Apri TavernExplorer",
+    "icon": "/icon.svg",
+    "popover": "/",
+    "width": 480,
+    "height": 760
+  },
+  "background_url": "/background.html"
+}

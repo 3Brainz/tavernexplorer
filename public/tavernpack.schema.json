@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tavernexplorer.vercel.app/tavernpack.schema.json",
+  "title": "TavernExplorer Campaign Pack",
+  "type": "object",
+  "required": ["format", "formatVersion", "exportedAt", "rulesets", "data"],
+  "properties": {
+    "format": { "const": "tavernpack" },
+    "formatVersion": { "const": "1.0.0" },
+    "exportedAt": { "type": "string", "format": "date-time" },
+    "rulesets": { "type": "array", "items": { "type": "object", "required": ["id", "version"], "properties": { "id": { "type": "string" }, "version": { "type": "string" } } } },
+    "data": {
+      "type": "object",
+      "required": ["characters", "monsters", "campaigns", "sharedInventory"],
+      "properties": {
+        "characters": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
+        "monsters": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
+        "campaigns": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
+        "sharedInventory": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
+        "session": {
+          "type": "object",
+          "required": ["messages", "turnState"],
+          "properties": {
+            "messages": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
+            "turnState": { "type": "object", "additionalProperties": true }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "entity": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "minLength": 1 } }, "additionalProperties": true }
+  }
+}
