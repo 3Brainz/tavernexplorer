@@ -1,0 +1,1 @@
+.editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}.editor-grid label{display:grid;gap:.35rem}.editor-grid label>span{font-size:.75rem;color:hsl(var(--muted-foreground))}@media(max-width:480px){.editor-grid{grid-template-columns:1fr}}

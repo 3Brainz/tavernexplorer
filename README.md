@@ -51,6 +51,11 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
 - Schede, bestiario, avventure e ultimi 200 messaggi: storage locale del browser.
 - Turn order: metadata della stanza Owlbear, sincronizzati con i partecipanti.
 - Inventario comune: metadata della stanza Owlbear, con copia locale di sicurezza.
+- Party: le schede locali vengono pubblicate in forma compatta nei metadata del
+  giocatore e sono consultabili dal GM nella sezione Party.
+- Turn order e messaggi possono essere aperti come pannelli flottanti sulla mappa.
+- Le mappe individuate nelle avventure 5e.tools possono essere caricate
+  direttamente come scene Owlbear.
 - Collegamento token/scheda: metadata del token.
 - Nuovi messaggi e risultati: broadcast effimero Owlbear.
 

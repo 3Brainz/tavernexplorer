@@ -7,15 +7,15 @@ import { listAdventures, listBestiarySources, loadAdventure, loadBestiarySource,
 import { DEFAULT_RULESET, getRuleset } from "./rulesets";
 import { storage } from "./storage";
 import { createTavernPack, parseTavernPack } from "./tavernpack";
-import { Alert, Button, Card, Dialog, Input, Select, Spinner } from "./ui";
+import { Alert, Badge, Button, Card, Dialog, Input, Select, Spinner } from "./ui";
 import {
-  DEFAULT_PERMISSIONS, OBR, addSelectedTokenToTurns, broadcastMessage, getPermissions, getPlayerInfo, getTurnState,
-  getSharedInventory, onBroadcastMessage, onPermissionsChange, onSharedInventoryChange, onTurnStateChange, setActiveCharacter, setPermissions, setSharedInventory, setTurnState, uploadMapAsScene,
+  DEFAULT_PERMISSIONS, OBR, addSelectedTokenToTurns, broadcastMessage, getPartyCharacters, getPermissions, getPlayerInfo, getTurnState,
+  getSharedInventory, onBroadcastMessage, onPartyCharactersChange, onPermissionsChange, onSharedInventoryChange, onTurnStateChange, openFloatingPanel, publishPartyCharacters, setActiveCharacter, setPermissions, setSharedInventory, setTurnState, uploadMapAsScene, uploadRemoteMapAsScene,
 } from "./obr";
-import type { ActionEntry, CampaignDocument, CharacterSheet, ChatMessage, MonsterSheet, PermissionSettings, Roll20Export, RollMode, SharedInventoryItem, SpellEntry, TavernPack, TurnState, Visibility } from "./types";
+import type { ActionEntry, CampaignDocument, CharacterSheet, ChatMessage, MonsterSheet, PartyCharacterSummary, PermissionSettings, Roll20Export, RollMode, SharedInventoryItem, SpellEntry, TavernPack, TurnState, Visibility } from "./types";
 
-type AppTab = "sheet" | "turns" | "messages" | "library" | "compendium" | "campaigns" | "shared" | "settings";
-type SheetTab = "main" | "actions" | "spells" | "inventory" | "traits" | "bio";
+type AppTab = "sheet" | "turns" | "messages" | "library" | "compendium" | "campaigns" | "shared" | "party" | "settings";
+type SheetTab = "main" | "actions" | "spells" | "inventory" | "traits" | "bio" | "edit";
 
 const signed = (value: number) => `${value >= 0 ? "+" : ""}${value}`;
 const makeMessage = (partial: Partial<ChatMessage>): ChatMessage => ({
@@ -23,6 +23,7 @@ const makeMessage = (partial: Partial<ChatMessage>): ChatMessage => ({
 });
 
 export default function App() {
+  const floatingView = new URLSearchParams(window.location.search).get("view") as "messages" | "turns" | null;
   const [characters, setCharacters] = useState<CharacterSheet[]>(storage.characters.get());
   const [activeId, setActiveId] = useState<string | null>(() => storage.characters.get()[0]?.id ?? null);
   const [messages, setMessages] = useState<ChatMessage[]>(storage.messages.get());
@@ -30,18 +31,20 @@ export default function App() {
   const [campaigns, setCampaigns] = useState<CampaignDocument[]>(storage.campaigns.get());
   const [sharedInventory, setSharedInventoryState] = useState<SharedInventoryItem[]>(storage.sharedInventory.get());
   const [permissions, setPermissionState] = useState<PermissionSettings>(DEFAULT_PERMISSIONS);
+  const [partyCharacters, setPartyCharacters] = useState<PartyCharacterSummary[]>([]);
   const [selectedMonsterId, setSelectedMonsterId] = useState<string | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [turns, setTurns] = useState<TurnState>({ round: 1, activeIndex: 0, entries: [] });
-  const [tab, setTab] = useState<AppTab>(characters.length ? "sheet" : "library");
+  const [tab, setTab] = useState<AppTab>(floatingView === "messages" ? "messages" : floatingView === "turns" ? "turns" : characters.length ? "sheet" : "library");
   const [sheetTab, setSheetTab] = useState<SheetTab>("main");
   const [rollMode, setRollMode] = useState<RollMode>("normal");
   const [visibility, setVisibility] = useState<Visibility>("everyone");
-  const [player, setPlayer] = useState({ name: "Giocatore", role: "PLAYER" as "GM" | "PLAYER" });
+  const [player, setPlayer] = useState({ id: "preview", name: "Giocatore", role: "PLAYER" as "GM" | "PLAYER" });
   const [draft, setDraft] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<HTMLInputElement>(null);
+  const charactersRef = useRef(characters);
   const active = characters.find((character) => character.id === activeId) ?? null;
 
   const saveCharacters = (next: CharacterSheet[]) => { setCharacters(next); storage.characters.set(next); };
@@ -52,23 +55,28 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!OBR.isAvailable) { setPlayer({ name: "Modalità anteprima", role: "GM" }); return; }
+    if (!OBR.isAvailable) { setPlayer({ id: "preview", name: "Modalità anteprima", role: "GM" }); return; }
     return OBR.onReady(() => {
       getPlayerInfo().then(setPlayer);
       getTurnState().then(setTurns);
       getSharedInventory().then((items) => { if (items.length) { setSharedInventoryState(items); storage.sharedInventory.set(items); } });
       getPermissions().then(setPermissionState);
+      getPartyCharacters().then(setPartyCharacters);
+      publishPartyCharacters(charactersRef.current);
       const stopTurns = onTurnStateChange(setTurns);
       const stopMessages = onBroadcastMessage((message) => {
         setMessages((current) => { const next = [...current.filter((item) => item.id !== message.id), message].slice(-200); storage.messages.set(next); return next; });
       });
       const stopInventory = onSharedInventoryChange((items) => { setSharedInventoryState(items); storage.sharedInventory.set(items); });
       const stopPermissions = onPermissionsChange(setPermissionState);
-      return () => { stopTurns(); stopMessages(); stopInventory(); stopPermissions(); };
+      const stopParty = onPartyCharactersChange(setPartyCharacters);
+      return () => { stopTurns(); stopMessages(); stopInventory(); stopPermissions(); stopParty(); };
     });
   }, []);
 
   useEffect(() => { setActiveCharacter(activeId); }, [activeId]);
+  useEffect(() => { charactersRef.current = characters; publishPartyCharacters(characters); }, [characters]);
+  useEffect(() => { const sync = (event: StorageEvent) => { if (event.key?.includes("/messages/")) setMessages(storage.messages.get()); }; window.addEventListener("storage", sync); return () => window.removeEventListener("storage", sync); }, []);
 
   async function publish(message: ChatMessage) {
     saveMessages([...messages, message]);
@@ -80,7 +88,7 @@ export default function App() {
     try {
       const result = roll(formula, rollMode);
       await publish(makeMessage({ kind: "roll", author: active?.name ?? player.name, characterId: active?.id, title, body: `${result.formula} → ${result.total}`, formula: result.formula, total: result.total, dice: result.dice, visibility }));
-      setTab("messages");
+      if (OBR.isAvailable) await openFloatingPanel("messages"); else setTab("messages");
     } catch (error) {
       if (OBR.isAvailable) await OBR.notification.show(error instanceof Error ? error.message : "Tiro non valido", "ERROR");
     }
@@ -88,7 +96,7 @@ export default function App() {
 
   async function shareEntry(entry: ActionEntry | SpellEntry) {
     await publish(makeMessage({ kind: "share", author: active?.name ?? player.name, characterId: active?.id, title: entry.name, body: entry.description || [entry.damage && `Danno ${entry.damage}`, entry.saveDc && `CD ${entry.saveDc}`].filter(Boolean).join(" · ") || "Nessuna descrizione", visibility }));
-    setTab("messages");
+    if (OBR.isAvailable) await openFloatingPanel("messages"); else setTab("messages");
   }
 
   async function importFile(file: File) {
@@ -168,6 +176,7 @@ export default function App() {
   const visibleMessages = useMemo(() => messages.filter((message) => message.visibility !== "gm" || player.role === "GM" || message.author === active?.name), [messages, player.role, active?.name]);
 
   return <div className="app">
+    {!floatingView && <>
     <header className="topbar">
       <div className="brand"><img src="/icon.svg" alt=""/><div><strong>TavernExplorer</strong><small>{DEFAULT_RULESET.label}</small></div></div>
       <select value={activeId ?? ""} onChange={(event) => { setActiveId(event.target.value || null); if (event.target.value) setTab("sheet"); }}>
@@ -178,22 +187,25 @@ export default function App() {
     <nav className="app-tabs">
       <button className={tab === "sheet" ? "active" : ""} onClick={() => setTab("sheet")}>Scheda</button>
       <button className={tab === "turns" ? "active" : ""} onClick={() => setTab("turns")}>Turni <span>{turns.entries.length}</span></button>
-      <button className={tab === "messages" ? "active" : ""} onClick={() => setTab("messages")}>Messaggi</button>
+      <button className={tab === "messages" ? "active" : ""} onClick={() => { if (OBR.isAvailable) void openFloatingPanel("messages"); else setTab("messages"); }}>Messaggi ↗</button>
       <button className={tab === "compendium" ? "active" : ""} onClick={() => setTab("compendium")}>Bestiario</button>
       <button className={tab === "campaigns" ? "active" : ""} onClick={() => setTab("campaigns")}>Avventure</button>
       <button className={tab === "shared" ? "active" : ""} onClick={() => setTab("shared")}>Inventario comune</button>
+      {player.role === "GM" && <button className={tab === "party" ? "active" : ""} onClick={() => setTab("party")}>Party <span>{partyCharacters.length}</span></button>}
       <button className={tab === "library" ? "active" : ""} onClick={() => setTab("library")}>Libreria</button>
       {player.role === "GM" && <button className={tab === "settings" ? "active" : ""} onClick={() => setTab("settings")}>Permessi</button>}
     </nav>
+    </>}
 
     <main>
       {tab === "sheet" && (active ? <SheetView sheet={active} sheetTab={sheetTab} setSheetTab={setSheetTab} rollMode={rollMode} setRollMode={setRollMode} visibility={visibility} setVisibility={setVisibility} onRoll={performRoll} onShare={shareEntry} onUpdate={updateActive}/> : <Empty onImport={() => fileRef.current?.click()}/>)}
-      {tab === "turns" && <TurnOrder state={turns} isGm={player.role === "GM" || permissions.playersManageTurns} onChange={changeTurns} onNext={nextTurn} active={active} onAttach={async () => { if (!active) return; await addSelectedTokenToTurns(active.id, active.name, active.combat.initiative); }}/>} 
+      {tab === "turns" && <div className="stack">{!floatingView && OBR.isAvailable && <Button variant="outline" onClick={() => void openFloatingPanel("turns")}>Apri turn order sulla mappa ↗</Button>}<TurnOrder state={turns} isGm={player.role === "GM" || permissions.playersManageTurns} onChange={changeTurns} onNext={nextTurn} active={active} onAttach={async () => { if (!active) return; await addSelectedTokenToTurns(active.id, active.name, active.combat.initiative); }}/></div>} 
       {tab === "messages" && <Messages messages={visibleMessages} draft={draft} setDraft={setDraft} visibility={visibility} setVisibility={setVisibility} onSend={sendText}/>} 
       {tab === "library" && <Library characters={characters} activeId={activeId} onSelect={(id) => { setActiveId(id); setTab("sheet"); }} onImport={() => fileRef.current?.click()} onExport={exportCharacter} onExportPack={exportPack} onDelete={(id) => { const next = characters.filter((item) => item.id !== id); saveCharacters(next); if (activeId === id) setActiveId(next[0]?.id ?? null); }}/>} 
       {tab === "compendium" && <Bestiary canManage={player.role === "GM" || permissions.playersImportContent} monsters={monsters} selectedId={selectedMonsterId} onSelect={setSelectedMonsterId} onImport={() => contentRef.current?.click()} onImported={(next) => { setMonsters(next); storage.monsters.set(next); }} onDelete={(id) => { const next = monsters.filter((item) => item.id !== id); setMonsters(next); storage.monsters.set(next); setSelectedMonsterId(null); }} onRoll={performRoll} onShare={shareEntry} onAddTurn={async (monster) => { const initiative = Math.floor((monster.abilities.dex - 10) / 2); await addSelectedTokenToTurns(monster.id, monster.name, initiative); }}/>} 
-      {tab === "campaigns" && <Campaigns canManage={player.role === "GM" || permissions.playersImportContent} documents={campaigns} selectedId={selectedCampaignId} onSelect={setSelectedCampaignId} onImport={() => contentRef.current?.click()} onImported={(next) => { setCampaigns(next); storage.campaigns.set(next); }} onDelete={(id) => { const next = campaigns.filter((item) => item.id !== id); setCampaigns(next); storage.campaigns.set(next); setSelectedCampaignId(null); }} onMap={() => mapRef.current?.click()} onShare={async (title, body) => { await publish(makeMessage({ kind: "share", author: active?.name ?? player.name, title, body, visibility })); }}/>} 
+      {tab === "campaigns" && <Campaigns canManage={player.role === "GM" || permissions.playersImportContent} documents={campaigns} selectedId={selectedCampaignId} onSelect={setSelectedCampaignId} onImport={() => contentRef.current?.click()} onImported={(next) => { setCampaigns(next); storage.campaigns.set(next); }} onDelete={(id) => { const next = campaigns.filter((item) => item.id !== id); setCampaigns(next); storage.campaigns.set(next); setSelectedCampaignId(null); }} onMap={() => mapRef.current?.click()} onAdventureMap={async (image) => { try { await uploadRemoteMapAsScene(image.url, image.title); if (OBR.isAvailable) await OBR.notification.show(`${image.title} caricata nelle scene`, "SUCCESS"); } catch (error) { const message = error instanceof Error ? error.message : "Caricamento mappa fallito"; if (OBR.isAvailable) await OBR.notification.show(message, "ERROR"); else window.alert(message); } }} onShare={async (title, body) => { await publish(makeMessage({ kind: "share", author: active?.name ?? player.name, title, body, visibility })); }}/>} 
       {tab === "shared" && <SharedInventory editable={player.role === "GM" || permissions.playersEditInventory} items={sharedInventory} characters={characters} onChange={saveSharedInventory}/>} 
+      {tab === "party" && player.role === "GM" && <Party characters={partyCharacters}/>} 
       {tab === "settings" && player.role === "GM" && <Permissions value={permissions} onChange={async (next) => { setPermissionState(next); await setPermissions(next); }}/>} 
     </main>
     <input ref={fileRef} hidden type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importFile(file); event.target.value = ""; }}/>
@@ -213,14 +225,20 @@ function SheetView({ sheet, sheetTab, setSheetTab, rollMode, setRollMode, visibi
       <select value={rollMode} onChange={(event) => setRollMode(event.target.value as RollMode)}><option value="normal">Normale</option><option value="advantage">Vantaggio</option><option value="disadvantage">Svantaggio</option></select>
       <select value={visibility} onChange={(event) => setVisibility(event.target.value as Visibility)}><option value="everyone">Tutti</option><option value="self">Solo io</option><option value="gm">GM</option></select>
     </div>
-    <nav className="sheet-tabs">{(["main", "actions", "spells", "inventory", "traits", "bio"] as SheetTab[]).map((item) => <button key={item} className={sheetTab === item ? "active" : ""} onClick={() => setSheetTab(item)}>{({ main: "Base", actions: "Azioni", spells: "Magia", inventory: "Zaino", traits: "Tratti", bio: "Bio" } as Record<SheetTab, string>)[item]}</button>)}</nav>
+    <nav className="sheet-tabs">{(["main", "actions", "spells", "inventory", "traits", "bio", "edit"] as SheetTab[]).map((item) => <button key={item} className={sheetTab === item ? "active" : ""} onClick={() => setSheetTab(item)}>{({ main: "Base", actions: "Azioni", spells: "Magia", inventory: "Zaino", traits: "Tratti", bio: "Bio", edit: "Modifica" } as Record<SheetTab, string>)[item]}</button>)}</nav>
     {sheetTab === "main" && <MainSheet sheet={sheet} onRoll={onRoll} onUpdate={onUpdate}/>} 
     {sheetTab === "actions" && <EntryList entries={sheet.actions} onRoll={onRoll} onShare={onShare}/>} 
     {sheetTab === "spells" && <Spells sheet={sheet} onRoll={onRoll} onShare={onShare} onUpdate={onUpdate}/>} 
     {sheetTab === "inventory" && <Inventory sheet={sheet} onUpdate={onUpdate}/>} 
     {sheetTab === "traits" && <EntryList entries={sheet.traits.map((trait) => ({ ...trait, source: trait.source }))} onRoll={onRoll} onShare={onShare}/>} 
     {sheetTab === "bio" && <section className="paper"><h2>Biografia</h2><p className="prose">{sheet.biography || "Nessuna biografia."}</p>{sheet.importWarnings.length > 0 && <details className="warnings"><summary>{sheet.importWarnings.length} note d’importazione</summary><ul>{sheet.importWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></details>}</section>}
+    {sheetTab === "edit" && <CharacterEditor sheet={sheet} onUpdate={onUpdate}/>} 
   </>;
+}
+
+function CharacterEditor({ sheet, onUpdate }: { sheet: CharacterSheet; onUpdate: (update: (sheet: CharacterSheet) => CharacterSheet) => void }) {
+  const field = (label: string, value: string | number, apply: (next: CharacterSheet, value: string) => void, type = "text") => <label><span>{label}</span><Input type={type} value={value} onChange={(event) => onUpdate((next) => { apply(next, event.target.value); return next; })}/></label>;
+  return <div className="stack"><Card><h2>Identità</h2><div className="editor-grid">{field("Nome", sheet.name, (next, value) => { next.name = value; })}{field("Razza", sheet.identity.race, (next, value) => { next.identity.race = value; })}{field("Classe", sheet.identity.className, (next, value) => { next.identity.className = value; })}{field("Sottoclasse", sheet.identity.subclass, (next, value) => { next.identity.subclass = value; })}{field("Descrizione classe", sheet.identity.classDisplay, (next, value) => { next.identity.classDisplay = value; })}{field("Livello", sheet.identity.level, (next, value) => { next.identity.level = Math.max(1, Number(value) || 1); }, "number")}{field("Background", sheet.identity.background, (next, value) => { next.identity.background = value; })}{field("Allineamento", sheet.identity.alignment, (next, value) => { next.identity.alignment = value; })}</div></Card><Card><h2>Combattimento</h2><div className="editor-grid">{field("CA", sheet.combat.ac, (next, value) => { next.combat.ac = Number(value) || 0; }, "number")}{field("PF attuali", sheet.combat.hp.current, (next, value) => { next.combat.hp.current = Number(value) || 0; }, "number")}{field("PF massimi", sheet.combat.hp.max, (next, value) => { next.combat.hp.max = Number(value) || 0; }, "number")}{field("PF temporanei", sheet.combat.hp.temp, (next, value) => { next.combat.hp.temp = Number(value) || 0; }, "number")}{field("Iniziativa", sheet.combat.initiative, (next, value) => { next.combat.initiative = Number(value) || 0; }, "number")}{field("Velocità", sheet.combat.speed, (next, value) => { next.combat.speed = value; })}{field("CD incantesimi", sheet.spellcasting.saveDc, (next, value) => { next.spellcasting.saveDc = Number(value) || 0; }, "number")}{field("Attacco incantesimi", sheet.spellcasting.attackBonus, (next, value) => { next.spellcasting.attackBonus = Number(value) || 0; }, "number")}</div></Card><Card><h2>Caratteristiche</h2><div className="editor-grid">{Object.entries(sheet.abilities).map(([key, ability]) => field(ABILITY_LABELS[key] ?? key, ability.score, (next, value) => { const score = Number(value) || 0; next.abilities[key].score = score; next.abilities[key].mod = Math.floor((score - 10) / 2); }, "number"))}</div></Card><Card><h2>Biografia</h2><textarea className="ui-textarea" value={sheet.biography} onChange={(event) => onUpdate((next) => { next.biography = event.target.value; return next; })}/></Card></div>;
 }
 
 function MainSheet({ sheet, onRoll, onUpdate }: { sheet: CharacterSheet; onRoll: (title: string, formula: string) => void; onUpdate: (update: (sheet: CharacterSheet) => CharacterSheet) => void }) {
@@ -274,19 +292,19 @@ function Bestiary({ monsters, selectedId, canManage, onSelect, onImport, onImpor
   return <div className="stack"><Card className="remote-import"><h2>Catalogo 5e.tools</h2><p>Scarica solo il manuale scelto e lo converte nello standard TavernExplorer.</p><Button variant="outline" className="picker-button" onClick={() => setPickerOpen(true)}><span>{sources.find((source) => source.id === sourceId)?.label ?? "Scegli una sorgente"}</span><span>⌕</span></Button><Button onClick={remoteImport} disabled={loading || !sourceId}>{loading && <Spinner/>}{loading ? "Importazione…" : "Importa sorgente"}</Button>{error && <Alert tone="danger">{error}</Alert>}</Card><CatalogDialog open={pickerOpen} title="Scegli un manuale" description="Cerca per sigla sorgente 5e.tools" items={sources.map((source) => ({ id: source.id, label: source.label, detail: source.file }))} selectedId={sourceId} onSelect={(id) => { setSourceId(id); setPickerOpen(false); }} onClose={() => setPickerOpen(false)}/><section className="library-actions"><Button variant="outline" onClick={onImport}>Importa file 5e.tools</Button></section><section className="monster-grid">{monsters.map((monster) => <button key={monster.id} onClick={() => onSelect(monster.id)}><strong>{monster.name}</strong><small>{monster.creatureType} · GS {monster.challengeRating}</small><span>CA {monster.ac} · PF {monster.hp.average}</span></button>)}</section>{monsters.length === 0 && <Empty/>}</div>;
 }
 
-function ChapterView({ chapter, onShare }: { chapter: CampaignDocument["chapters"][number]; onShare: (title: string, body: string) => void }) {
-  return <details className="chapter"><summary>{chapter.title}</summary><div><button onClick={() => onShare(chapter.title, chapter.body)}>Condividi estratto</button><p>{chapter.body}</p>{chapter.images.length > 0 && <section className="chapter-images">{chapter.images.map((image) => <a key={`${image.title}-${image.url}`} href={image.url} target="_blank" rel="noreferrer">{image.title}</a>)}</section>}{chapter.children.map((child) => <ChapterView key={child.id} chapter={child} onShare={onShare}/>)}</div></details>;
+function ChapterView({ chapter, onShare, onMap }: { chapter: CampaignDocument["chapters"][number]; onShare: (title: string, body: string) => void; onMap: (image: CampaignDocument["chapters"][number]["images"][number]) => void }) {
+  return <details className="chapter"><summary>{chapter.title}</summary><div><button onClick={() => onShare(chapter.title, chapter.body)}>Condividi estratto</button><p>{chapter.body}</p>{chapter.images.length > 0 && <section className="chapter-images">{chapter.images.map((image) => <article className={image.kind !== "image" ? "adventure-map" : "adventure-image"} key={`${image.title}-${image.url}`}><a href={image.url} target="_blank" rel="noreferrer">{image.title}</a><Badge>{image.kind === "mapPlayer" ? "Mappa giocatori" : image.kind === "map" ? "Mappa GM" : "Immagine"}</Badge><Button variant="secondary" onClick={() => onMap(image)}>Carica come scena</Button></article>)}</section>}{chapter.children.map((child) => <ChapterView key={child.id} chapter={child} onShare={onShare} onMap={onMap}/>)}</div></details>;
 }
 
-function Campaigns({ documents, selectedId, canManage, onSelect, onImport, onImported, onDelete, onMap, onShare }: { documents: CampaignDocument[]; selectedId: string | null; canManage: boolean; onSelect: (id: string | null) => void; onImport: () => void; onImported: (items: CampaignDocument[]) => void; onDelete: (id: string) => void; onMap: () => void; onShare: (title: string, body: string) => void }) {
+function Campaigns({ documents, selectedId, canManage, onSelect, onImport, onImported, onDelete, onMap, onAdventureMap, onShare }: { documents: CampaignDocument[]; selectedId: string | null; canManage: boolean; onSelect: (id: string | null) => void; onImport: () => void; onImported: (items: CampaignDocument[]) => void; onDelete: (id: string) => void; onMap: () => void; onAdventureMap: (image: CampaignDocument["chapters"][number]["images"][number]) => void; onShare: (title: string, body: string) => void }) {
   const removeSelected = () => { const selected = documents.find((document) => document.id === selectedId); if (selected && canManage && window.confirm(`Eliminare ${selected.title}?`)) onDelete(selected.id); };
   const [catalog, setCatalog] = useState<FiveToolsAdventure[]>([]); const [adventureId, setAdventureId] = useState(""); const [pickerOpen, setPickerOpen] = useState(false); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
   useEffect(() => { listAdventures().then((rows) => { setCatalog(rows); setAdventureId(rows[0]?.id ?? ""); }).catch((reason) => setError(reason instanceof Error ? reason.message : "Catalogo non disponibile")); }, []);
   async function remoteImport() { const adventure = catalog.find((row) => row.id === adventureId); if (!adventure) return; setLoading(true); setError(""); try { const imported = await loadAdventure(adventure); const next = [...documents.filter((item) => !(item.title === imported.title && item.source === imported.source)), imported]; onImported(next); onSelect(imported.id); } catch (reason) { setError(reason instanceof Error ? reason.message : "Importazione fallita"); } finally { setLoading(false); } }
   const selected = documents.find((document) => document.id === selectedId);
-  if (selected && canManage) return <div className="stack"><div className="library-actions"><Button variant="ghost" onClick={() => onSelect(null)}>← Avventure</Button><Button variant="destructive" onClick={removeSelected}>Elimina avventura</Button></div><Campaigns documents={documents} selectedId={selectedId} canManage={false} onSelect={onSelect} onImport={onImport} onImported={onImported} onDelete={onDelete} onMap={onMap} onShare={onShare}/></div>;
+  if (selected && canManage) return <div className="stack"><div className="library-actions"><Button variant="ghost" onClick={() => onSelect(null)}>← Avventure</Button><Button variant="destructive" onClick={removeSelected}>Elimina avventura</Button></div><Campaigns documents={documents} selectedId={selectedId} canManage={false} onSelect={onSelect} onImport={onImport} onImported={onImported} onDelete={onDelete} onMap={onMap} onAdventureMap={onAdventureMap} onShare={onShare}/></div>;
   if (!selected && !canManage) return <div className="stack"><Alert>Il GM ha riservato importazione ed eliminazione dei contenuti.</Alert>{documents.map((document) => <button className="campaign-card" key={document.id} onClick={() => onSelect(document.id)}><strong>{document.title}</strong><small>{document.source} · {document.chapters.length} capitoli</small></button>)}{documents.length === 0 && <Empty/>}</div>;
-  if (selected) return <div className="stack"><button onClick={() => onSelect(null)}>← Avventure</button><section className="paper"><h2>{selected.title}</h2><p>{selected.source} · {getRuleset(selected.ruleset.id).label}</p><button className="primary" onClick={onMap}>Carica mappa come scena Owlbear</button></section><section className="chapters">{selected.chapters.map((chapter) => <ChapterView key={chapter.id} chapter={chapter} onShare={onShare}/>)}</section></div>;
+  if (selected) return <div className="stack"><button onClick={() => onSelect(null)}>← Avventure</button><section className="paper"><h2>{selected.title}</h2><p>{selected.source} · {getRuleset(selected.ruleset.id).label}</p><button className="primary" onClick={onMap}>Carica una mappa dal dispositivo</button></section><section className="chapters">{selected.chapters.map((chapter) => <ChapterView key={chapter.id} chapter={chapter} onShare={onShare} onMap={onAdventureMap}/>)}</section></div>;
   return <div className="stack"><Card className="remote-import"><h2>Avventure 5e.tools</h2><p>Scegli un'avventura: viene scaricata su richiesta e normalizzata in capitoli TavernExplorer.</p><Button variant="outline" className="picker-button" onClick={() => setPickerOpen(true)}><span>{catalog.find((adventure) => adventure.id === adventureId)?.name ?? "Cerca un'avventura"}</span><span>⌕</span></Button><Button disabled={loading || !adventureId} onClick={remoteImport}>{loading && <Spinner/>}{loading ? "Importazione…" : "Importa avventura"}</Button>{error && <Alert tone="danger">{error}</Alert>}</Card><CatalogDialog open={pickerOpen} title="Cerca un'avventura" description="Ricerca interattiva nel catalogo 5e.tools" items={catalog.map((adventure) => ({ id: adventure.id, label: adventure.name, detail: adventure.source }))} selectedId={adventureId} onSelect={(id) => { setAdventureId(id); setPickerOpen(false); }} onClose={() => setPickerOpen(false)}/><section className="library-actions"><Button variant="outline" onClick={onImport}>Importa file 5e.tools</Button><Button variant="secondary" onClick={onMap}>Carica mappa</Button></section>{documents.map((document) => <button className="campaign-card" key={document.id} onClick={() => onSelect(document.id)}><strong>{document.title}</strong><small>{document.source} · {document.chapters.length} capitoli</small></button>)}{documents.length === 0 && <Empty/>}</div>;
 }
 
@@ -311,6 +329,10 @@ function Permissions({ value, onChange }: { value: PermissionSettings; onChange:
     { key: "playersManageTurns", title: "Gestire ordine dei turni", description: "Cambiare iniziativa, avanzare e rimuovere partecipanti." },
   ];
   return <div className="stack"><Card><h2>Autorizzazioni stanza</h2><p>Queste impostazioni sono condivise tramite i metadata Owlbear e possono essere cambiate solo dal GM.</p></Card><Card>{options.map((option) => <label className="permission-row" key={option.key}><span><strong>{option.title}</strong><small>{option.description}</small></span><input type="checkbox" checked={value[option.key]} onChange={(event) => void onChange({ ...value, [option.key]: event.target.checked })}/></label>)}</Card></div>;
+}
+
+function Party({ characters }: { characters: PartyCharacterSummary[] }) {
+  return <div className="stack"><Card><h2>Party della stanza</h2><p>Le schede importate dai giocatori connessi sono pubblicate automaticamente al DM.</p></Card>{characters.map((character) => <Card className="party-card" key={`${character.ownerId}-${character.id}`}><header>{character.avatar && <img src={character.avatar} alt="" referrerPolicy="no-referrer"/>}<div><h2>{character.name}</h2><p>{character.classDisplay} · {character.race}</p><small>Giocatore: {character.ownerName} · {getRuleset(character.ruleset.id).label}</small></div></header><section className="combat-grid"><Metric label="CA" value={character.ac}/><Metric label="PF" value={`${character.hp.current}/${character.hp.max}`}/><Metric label="Iniziativa" value={signed(character.initiative)}/><Metric label="CD magia" value={character.spellSaveDc}/><Metric label="Attacco magia" value={signed(character.spellAttackBonus)}/><Metric label="Livello" value={character.level}/></section><section className="party-abilities">{Object.entries(character.abilities).map(([key, ability]) => <div key={key}><small>{ABILITY_LABELS[key] ?? key}</small><strong>{ability.score}</strong><span>{signed(ability.mod)}</span></div>)}</section></Card>)}{characters.length === 0 && <Empty/>}</div>;
 }
 
 function Empty({ onImport }: { onImport?: () => void }) { return <section className="empty"><img src="/icon.svg" alt=""/><h2>Niente da mostrare</h2><p>Importa un personaggio esportato da Roll20 per iniziare.</p>{onImport && <button className="primary" onClick={onImport}>Importa JSON</button>}</section>; }

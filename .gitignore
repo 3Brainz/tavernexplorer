@@ -7,3 +7,4 @@ dist/
 !.env.example
 .vercel/
 package-lock.json
+.vercel

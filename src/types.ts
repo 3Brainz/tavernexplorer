@@ -160,7 +160,14 @@ export interface CampaignChapter {
   title: string;
   body: string;
   children: CampaignChapter[];
-  images: Array<{ title: string; url: string }>;
+  images: Array<{ title: string; url: string; kind: "map" | "mapPlayer" | "image" }>;
+}
+
+export interface PartyCharacterSummary {
+  id: string; ownerId: string; ownerName: string; name: string; avatar?: string;
+  classDisplay: string; race: string; level: number; ruleset: { id: string; version: string };
+  ac: number; hp: { current: number; max: number; temp: number }; initiative: number;
+  abilities: Record<string, AbilityStat>; spellSaveDc: number; spellAttackBonus: number;
 }
 
 export interface CampaignDocument {

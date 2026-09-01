@@ -110,14 +110,16 @@ export function import5eToolsMonsters(source: unknown): MonsterSheet[] {
   });
 }
 
-function collectImages(value: unknown): Array<{ title: string; url: string }> {
-  const found: Array<{ title: string; url: string }> = [];
+function collectImages(value: unknown): Array<{ title: string; url: string; kind: "map" | "mapPlayer" | "image" }> {
+  const found: Array<{ title: string; url: string; kind: "map" | "mapPlayer" | "image" }> = [];
   const visit = (node: unknown) => {
     if (Array.isArray(node)) { node.forEach(visit); return; }
     const entry = obj(node); if (!Object.keys(entry).length) return;
     if (entry.type === "image") {
-      const href = obj(entry.href); const url = text(href.url || href.path);
-      if (url) found.push({ title: text(entry.title || entry.name) || "Immagine", url });
+      const href = obj(entry.href); const rawUrl = text(href.url || href.path);
+      const url = href.type === "internal" || (!/^https?:/i.test(rawUrl) && rawUrl) ? `https://raw.githubusercontent.com/5etools-mirror-3/5etools-img/main/${rawUrl.replace(/^img\//, "")}` : rawUrl;
+      const imageType = text(entry.imageType); const kind = imageType === "map" || imageType === "mapPlayer" ? imageType : "image";
+      if (url) found.push({ title: text(entry.title || entry.name) || (kind === "image" ? "Immagine" : "Mappa"), url, kind });
     }
     Object.values(entry).forEach(visit);
   };

@@ -9,6 +9,7 @@ export const STORAGE_CAMPAIGNS = `${EXTENSION_ID}/campaigns/v1`;
 export const STORAGE_SHARED_INVENTORY = `${EXTENSION_ID}/shared-inventory/v1`;
 export const INVENTORY_META_KEY = `${EXTENSION_ID}/shared-inventory`;
 export const PERMISSIONS_META_KEY = `${EXTENSION_ID}/permissions`;
+export const PARTY_META_KEY = `${EXTENSION_ID}/party-characters`;
 
 export const ABILITY_LABELS: Record<string, string> = {
   strength: "Forza",

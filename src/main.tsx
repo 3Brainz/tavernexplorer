@@ -6,5 +6,7 @@ import "./extended.css";
 import "./theme.css";
 import "./dialog.css";
 import "./permissions.css";
+import "./party.css";
+import "./editor.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);

@@ -1,6 +1,6 @@
 import OBR, { buildImageUpload, buildSceneUpload } from "@owlbear-rodeo/sdk";
-import { EXTENSION_ID, INVENTORY_META_KEY, MESSAGE_CHANNEL, PERMISSIONS_META_KEY, TOKEN_META_KEY, TURN_META_KEY } from "./constants";
-import type { ChatMessage, PermissionSettings, SharedInventoryItem, TurnEntry, TurnState } from "./types";
+import { EXTENSION_ID, INVENTORY_META_KEY, MESSAGE_CHANNEL, PARTY_META_KEY, PERMISSIONS_META_KEY, TOKEN_META_KEY, TURN_META_KEY } from "./constants";
+import type { CharacterSheet, ChatMessage, PartyCharacterSummary, PermissionSettings, SharedInventoryItem, TurnEntry, TurnState } from "./types";
 
 const emptyTurns = (): TurnState => ({ round: 1, activeIndex: 0, entries: [] });
 export const DEFAULT_PERMISSIONS: PermissionSettings = { playersEditInventory: true, playersImportContent: false, playersManageTurns: false };
@@ -35,9 +35,9 @@ export function onBroadcastMessage(callback: (message: ChatMessage) => void): ()
   return OBR.broadcast.onMessage(MESSAGE_CHANNEL, (event) => callback(event.data as ChatMessage));
 }
 
-export async function getPlayerInfo(): Promise<{ name: string; role: "GM" | "PLAYER" }> {
-  if (!OBR.isAvailable) return { name: "Giocatore", role: "GM" };
-  return { name: await OBR.player.getName(), role: await OBR.player.getRole() };
+export async function getPlayerInfo(): Promise<{ id: string; name: string; role: "GM" | "PLAYER" }> {
+  if (!OBR.isAvailable) return { id: "preview", name: "Giocatore", role: "GM" };
+  return { id: await OBR.player.getId(), name: await OBR.player.getName(), role: await OBR.player.getRole() };
 }
 
 export async function setActiveCharacter(characterId: string | null): Promise<void> {
@@ -66,6 +66,33 @@ export async function uploadMapAsScene(file: File, sceneName: string): Promise<v
   const image = buildImageUpload(copy).name(sceneName).build();
   const scene = buildSceneUpload().name(sceneName).baseMap(image).build();
   await OBR.assets.uploadScenes([scene]);
+}
+
+export async function uploadRemoteMapAsScene(url: string, sceneName: string): Promise<void> {
+  const response = await fetch(url); if (!response.ok) throw new Error(`Download mappa fallito (${response.status})`);
+  const blob = await response.blob(); const extension = blob.type.split("/")[1]?.replace("jpeg", "jpg") || "webp";
+  await uploadMapAsScene(new File([blob], `${sceneName}.${extension}`, { type: blob.type || "image/webp" }), sceneName);
+}
+
+export async function openFloatingPanel(view: "messages" | "turns"): Promise<void> {
+  if (!OBR.isAvailable) return;
+  await OBR.popover.open({ id: `${EXTENSION_ID}/${view}-panel`, url: `/?view=${view}`, width: view === "messages" ? 400 : 340, height: view === "messages" ? 620 : 500, anchorReference: "POSITION", anchorPosition: { left: 24, top: 100 }, anchorOrigin: { horizontal: "LEFT", vertical: "TOP" }, transformOrigin: { horizontal: "LEFT", vertical: "TOP" }, disableClickAway: true });
+}
+
+function summarize(sheet: CharacterSheet, ownerId: string, ownerName: string): PartyCharacterSummary {
+  return { id: sheet.id, ownerId, ownerName, name: sheet.name, avatar: sheet.avatar, classDisplay: sheet.identity.classDisplay, race: sheet.identity.race, level: sheet.identity.level, ruleset: sheet.ruleset, ac: sheet.combat.ac, hp: sheet.combat.hp, initiative: sheet.combat.initiative, abilities: sheet.abilities, spellSaveDc: sheet.spellcasting.saveDc, spellAttackBonus: sheet.spellcasting.attackBonus };
+}
+export async function publishPartyCharacters(sheets: CharacterSheet[]): Promise<void> {
+  if (!OBR.isAvailable) return; const ownerId = await OBR.player.getId(); const ownerName = await OBR.player.getName();
+  await OBR.player.setMetadata({ [PARTY_META_KEY]: sheets.map((sheet) => summarize(sheet, ownerId, ownerName)) });
+}
+export async function getPartyCharacters(): Promise<PartyCharacterSummary[]> {
+  if (!OBR.isAvailable) return [];
+  return (await OBR.party.getPlayers()).flatMap((member) => Array.isArray(member.metadata[PARTY_META_KEY]) ? member.metadata[PARTY_META_KEY] as unknown as PartyCharacterSummary[] : []);
+}
+export function onPartyCharactersChange(callback: (characters: PartyCharacterSummary[]) => void): () => void {
+  if (!OBR.isAvailable) return () => undefined;
+  return OBR.party.onChange((members) => callback(members.flatMap((member) => Array.isArray(member.metadata[PARTY_META_KEY]) ? member.metadata[PARTY_META_KEY] as unknown as PartyCharacterSummary[] : [])));
 }
 
 export async function getSharedInventory(): Promise<SharedInventoryItem[]> {
