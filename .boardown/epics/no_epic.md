@@ -73,3 +73,15 @@ order: 600
 ---
 
 Permetti contatori per personaggio con valore massimo, valore corrente e recupero configurabile: nessuno, riposo breve o riposo lungo. I riposi devono aggiornare solo i contatori configurati.
+
+## Storage autenticato per dati condivisi
+
+---
+id: TE-15
+type: tech
+priority: high
+status: todo
+order: 700
+---
+
+Sostituire i metadata Owlbear come storage primario per schede e note con un servizio persistente autenticato, ACL per elemento e scritture atomiche. Migrare i dati esistenti senza perdita.

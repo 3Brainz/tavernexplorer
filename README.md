@@ -49,6 +49,10 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
 ## Dati e sincronizzazione
 
 - Schede, bestiario, avventure e ultimi 200 messaggi: storage locale del browser.
+- I metadata condivisi della stanza sono controllati prima di ogni scrittura:
+  TavernExplorer si ferma a 14 KB complessivi, lasciando margine sotto il limite
+  Owlbear di 16 KB. Se lo spazio finisce, la modifica non viene pubblicata e
+  l'estensione mostra l'errore. Esportare un TavernPack e ridurre i dati condivisi.
 - Turn order: metadata della stanza Owlbear, sincronizzati con i partecipanti.
   Il GM puo' avanzare o tornare al turno precedente, ritirare l'iniziativa e
   annotare condizioni con durata in round. Le condizioni scadono all'inizio
@@ -66,6 +70,9 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
   condivise sono pubblicate nei metadata della stanza e del giocatore. Le schede
   gia' salvate senza una scelta esplicita vengono trattate come private. Il DM
   vede e modifica solo le schede condivise, insieme ai delegati autorizzati.
+  Le schede identiche non vengono ripubblicate. Se una scheda locale diverge
+  dalla versione della stanza, l'estensione blocca la sovrascrittura e offre
+  un backup e una scelta esplicita tra le due versioni.
 - Turn order e messaggi possono essere aperti come pannelli flottanti sulla mappa.
 - Buff, debuff e proprietà numeriche degli oggetti equipaggiati modificano CA,
   iniziativa, PF massimi, caratteristiche, tiri salvezza, abilità, CD, attacchi
@@ -168,4 +175,8 @@ su `main`.
 - I permessi di modifica sono applicati dall'interfaccia. I metadata della stanza
   sono scrivibili da ogni client collegato e l'SDK non offre controlli per
   chiave: proteggono dalle modifiche accidentali, non da un client ostile.
+- Il controllo versione delle schede rileva modifiche remote già visibili, ma
+  Owlbear non offre scritture atomiche con confronto versione. Per ACL reali,
+  editing simultaneo senza collisioni e dati condivisi oltre 16 KB serve un
+  servizio persistente autenticato.
 - Lo storico non viene recuperato da chi entra nella stanza dopo l'invio.

@@ -1,6 +1,7 @@
 import OBR from "@owlbear-rodeo/sdk";
 import { EXTENSION_ID, PERMISSIONS_META_KEY, TURN_META_KEY } from "./constants";
 import { replaceTurnEntries } from "./turns";
+import { writeRoomMetadata } from "./roomMetadata";
 import type { TurnState } from "./types";
 
 OBR.onReady(async () => {
@@ -48,7 +49,8 @@ OBR.onReady(async () => {
           entries.push({ id: crypto.randomUUID(), tokenId: item.id, characterId, name: item.name || "Senza nome", initiative: Number(initiativeText) || 0 });
         }
       }
-      await OBR.room.setMetadata({ [TURN_META_KEY]: replaceTurnEntries(current, entries) });
+      try { await writeRoomMetadata({ [TURN_META_KEY]: replaceTurnEntries(current, entries) }); }
+      catch (error) { await OBR.notification.show(error instanceof Error ? error.message : "Ordine dei turni non salvato", "ERROR"); }
     },
   });
 });
