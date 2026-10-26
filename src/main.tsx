@@ -9,5 +9,7 @@ import "./permissions.css";
 import "./party.css";
 import "./editor.css";
 import "./floating.css";
+import "./refresh.css";
+import "./notes.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);

@@ -1,0 +1,66 @@
+:root {
+  --background: 222 31% 9%;
+  --foreground: 210 28% 94%;
+  --card: 222 25% 14%;
+  --card-foreground: 210 28% 94%;
+  --popover: 222 25% 14%;
+  --popover-foreground: 210 28% 94%;
+  --primary: 174 72% 58%;
+  --primary-foreground: 220 32% 8%;
+  --secondary: 222 20% 21%;
+  --secondary-foreground: 210 25% 93%;
+  --muted: 222 20% 18%;
+  --muted-foreground: 215 16% 69%;
+  --accent: 221 22% 25%;
+  --accent-foreground: 210 25% 95%;
+  --destructive: 0 63% 53%;
+  --border: 219 20% 28%;
+  --input: 219 20% 32%;
+  --ring: 174 72% 58%;
+  --radius: .8rem;
+}
+
+body {
+  color: hsl(var(--foreground));
+  background: radial-gradient(circle at 85% -15%, hsl(189 62% 38% / .16), transparent 43%), hsl(var(--background));
+}
+
+.topbar, .app-tabs, .sheet-tabs, .composer { background: hsl(var(--background) / .96); border-color: hsl(var(--border)); }
+.brand small, .hero p, .hero small, .metric small, .entry summary small, .spell-head small,
+.character-open small, .message header small, .empty, .party-owner { color: hsl(var(--muted-foreground)); }
+.topbar select, .roll-controls select, .composer select, .turn-list input, .hp button,
+.slot button, .inventory-row button { background: hsl(var(--secondary)); color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
+.app-tabs button, .sheet-tabs button { color: hsl(var(--muted-foreground)); }
+.app-tabs button:hover, .sheet-tabs button:hover { color: hsl(var(--foreground)); background: hsl(var(--accent) / .55); }
+.app-tabs button.active, .sheet-tabs button.active { color: hsl(var(--primary)); border-bottom-color: hsl(var(--primary)); }
+.app-tabs span { background: hsl(var(--secondary)); }
+.paper, .entry, .inventory-row, .library-card, .message, .metric, .abilities button,
+.turn-list article, .ui-card, .remote-import, .inventory-form { background: hsl(var(--card)); border-color: hsl(var(--border)); color: hsl(var(--foreground)); }
+.hero h1, .paper h2, .stack h2, .metric strong, .spell-head strong, .turn-header strong,
+.currency strong, .roll-result strong, .empty h2 { color: hsl(var(--primary)); }
+.hero img, .character-open img { border-color: hsl(var(--primary) / .6); }
+.abilities article, .skills button, .slot, .currency span { border-color: hsl(var(--border)); }
+.abilities .proficient, .dot.filled { color: hsl(var(--primary)); background: hsl(var(--primary) / .18); }
+.entry-actions button, .library-actions button, .turn-header button, .stack > button { border-color: hsl(var(--border)); background: hsl(var(--secondary)); color: hsl(var(--foreground)); }
+.primary, .ui-button--default { background: hsl(var(--primary)) !important; color: hsl(var(--primary-foreground)) !important; border-color: hsl(var(--primary)) !important; }
+.turn-list article.current { border-color: hsl(var(--primary)); box-shadow: 0 0 0 2px hsl(var(--primary) / .16); }
+.message.roll { border-left-color: hsl(var(--primary)); }
+.message.share { border-left-color: hsl(262 76% 70%); }
+.message h3 { color: hsl(262 76% 76%); }
+.roll-result, .shared-row { border-color: hsl(var(--border)); }
+.danger { color: hsl(0 75% 72%); }
+.ui-button:hover:not(:disabled), .primary:hover:not(:disabled) { filter: brightness(1.08); }
+
+.messages { min-height: 0; height: min(70vh, 650px); grid-template-rows: auto minmax(0, 1fr) auto; }
+.floating-handle + main { padding: .65rem; }
+.floating-handle + main .messages { height: calc(100vh - 4.15rem); }
+.message-list { min-height: 0; padding-right: .2rem; }
+.message-filters { display:flex; gap:.35rem; overflow:auto; padding-bottom:.2rem; }
+.message-filters button { border:1px solid hsl(var(--border)); background:hsl(var(--secondary)); color:hsl(var(--muted-foreground)); border-radius:999px; padding:.35rem .7rem; white-space:nowrap; font-size:.78rem; }
+.message-filters button.active { color:hsl(var(--primary)); border-color:hsl(var(--primary) / .7); background:hsl(var(--primary) / .1); }
+.message-empty { display:grid; place-items:center; color:hsl(var(--muted-foreground)); text-align:center; padding:2rem; }
+.composer textarea { color:hsl(var(--foreground)); }
+.composer select { max-width:none; min-width:8rem; }
+.composer button { border:0; border-radius:8px; padding:.5rem .9rem; }
+.composer-note { display:block; margin-top:.4rem; color:hsl(var(--muted-foreground)); font-size:.72rem; line-height:1.35; }
+.turn-empty { margin:0; padding:1.2rem; border:1px dashed hsl(var(--border)); border-radius:var(--radius); color:hsl(var(--muted-foreground)); font-size:.84rem; line-height:1.45; text-align:center; }

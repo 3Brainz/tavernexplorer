@@ -1,5 +1,5 @@
-import { STORAGE_CAMPAIGNS, STORAGE_CHARACTERS, STORAGE_MESSAGES, STORAGE_MONSTERS, STORAGE_SHARED_INVENTORY } from "./constants";
-import type { CampaignDocument, CharacterSheet, ChatMessage, MonsterSheet, SharedInventoryItem } from "./types";
+import { STORAGE_CAMPAIGNS, STORAGE_CHARACTERS, STORAGE_MESSAGES, STORAGE_MONSTERS, STORAGE_NOTES, STORAGE_SHARED_INVENTORY } from "./constants";
+import type { CampaignDocument, CharacterSheet, ChatMessage, MonsterSheet, PlayerNote, SharedInventoryItem } from "./types";
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -34,5 +34,9 @@ export const storage = {
   sharedInventory: {
     get: () => read<SharedInventoryItem[]>(STORAGE_SHARED_INVENTORY, []),
     set: (value: SharedInventoryItem[]) => write(STORAGE_SHARED_INVENTORY, value),
+  },
+  notes: {
+    get: () => read<PlayerNote[]>(STORAGE_NOTES, []),
+    set: (value: PlayerNote[]) => write(STORAGE_NOTES, value),
   },
 };

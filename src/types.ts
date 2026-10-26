@@ -52,6 +52,7 @@ export interface TraitEntry {
 export interface CharacterSheet {
   schemaVersion: 1;
   id: string;
+  sharing?: "private" | "party";
   sourceId?: string;
   name: string;
   avatar?: string;
@@ -113,6 +114,7 @@ export interface ChatMessage {
   id: string;
   kind: "text" | "roll" | "share" | "system";
   author: string;
+  authorId?: string;
   characterId?: string;
   title?: string;
   body: string;
@@ -198,6 +200,13 @@ export interface SharedInventoryItem {
   updatedAt: number;
 }
 
+export interface PlayerNote {
+  id: string;
+  title: string;
+  body: string;
+  updatedAt: number;
+}
+
 export interface TavernPack {
   $schema: "https://tavernexplorer.vercel.app/tavernpack.schema.json";
   format: "tavernpack";
@@ -209,6 +218,7 @@ export interface TavernPack {
     monsters: MonsterSheet[];
     campaigns: CampaignDocument[];
     sharedInventory: SharedInventoryItem[];
+    notes?: PlayerNote[];
     session?: { messages: ChatMessage[]; turnState: TurnState };
   };
 }

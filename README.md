@@ -51,20 +51,35 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
 - Schede, bestiario, avventure e ultimi 200 messaggi: storage locale del browser.
 - Turn order: metadata della stanza Owlbear, sincronizzati con i partecipanti.
 - Inventario comune: metadata della stanza Owlbear, con copia locale di sicurezza.
-- Party: le schede complete sono pubblicate nei metadata della stanza e sono
-  consultabili da tutto il party. La modifica resta riservata al proprietario,
-  al DM e ai giocatori che il proprietario o il DM delegano dalla scheda stessa.
-  Un riassunto compatto resta nei metadata del giocatore per compatibilita'.
+- Party: le schede nuove sono private nel browser. In **Libreria** si puo' scegliere
+  per ogni scheda **Solo questo browser** oppure **Tutto il party**. Solo le schede
+  condivise sono pubblicate nei metadata della stanza e del giocatore. Le schede
+  gia' salvate senza una scelta esplicita vengono trattate come private. Il DM
+  vede e modifica solo le schede condivise, insieme ai delegati autorizzati.
 - Turn order e messaggi possono essere aperti come pannelli flottanti sulla mappa.
 - Le mappe individuate nelle avventure 5e.tools possono essere caricate
   direttamente come scene Owlbear.
 - Collegamento token/scheda: metadata del token. Dal Party il DM assegna una
   scheda al token selezionato, la scollega o ne trasferisce la proprieta' a un
   altro giocatore.
-- Import bestiario: ogni mostro importato genera anche un token caricato come
-  asset `CHARACTER` con nome `beasts/<nome>`. Quando il mirror non espone
+- Import bestiario: dopo aver caricato un manuale o un file JSON, si scelgono
+  uno o piu' mostri. Solo quelli selezionati vengono salvati e caricati come
+  token `CHARACTER` con nome `beasts/<nome>`. Quando il mirror non espone
   l'immagine viene generato un token di riserva con le iniziali del mostro.
 - Nuovi messaggi e risultati: broadcast effimero Owlbear.
+- Note dei giocatori: ogni nota viene salvata localmente, inclusa nel TavernPack
+  e puo' essere inviata individualmente al party o al GM. L'invio crea una copia
+  nel registro messaggi; la nota originale resta modificabile solo nel browser.
+
+**Privacy:** bestiario e avventure restano nel browser che li ha importati; non
+sono sincronizzati con gli altri partecipanti. I messaggi “Solo io” restano
+locali. I nuovi messaggi “Solo GM” sono cifrati nel browser prima del broadcast
+Owlbear. Il GM deve aver aperto l'estensione per pubblicare la sua chiave
+pubblica. La chiave privata resta nel browser del GM; se quel browser viene
+azzerato, i nuovi messaggi useranno una nuova chiave. Le vecchie copie locali
+dei messaggi inviati con versioni precedenti non vengono cifrate retroattivamente.
+I riepiloghi dei mostri e gli estratti delle avventure partono da “Privato”:
+l'invio di una copia al party o al GM richiede una scelta per ogni elemento.
 
 I contenuti 5e.tools vengono richiesti dal mirror sorgente pubblico del progetto
 solo quando si sceglie una sorgente nella dialog ricercabile. L’accesso diretto
@@ -106,7 +121,7 @@ L'SDK Owlbear 3.1 non espone API per il dado 3D della piattaforma: i tiri usano
 il generatore crittografico del browser e le API Owlbear disponibili
 (`broadcast`, `notification`, `scene.items`).
 
-## Limiti della versione 0.3
+## Limiti della versione 0.4
 
 - L'importatore richiede il blocco `normalized` di `roll20-sheet-export`.
 - Le formule ricavate dalle descrizioni vengono segnalate nelle note d'import.

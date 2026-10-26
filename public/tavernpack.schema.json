@@ -17,6 +17,7 @@
         "monsters": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
         "campaigns": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
         "sharedInventory": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
+        "notes": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
         "session": {
           "type": "object",
           "required": ["messages", "turnState"],

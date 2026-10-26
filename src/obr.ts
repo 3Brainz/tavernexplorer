@@ -1,6 +1,7 @@
 import OBR, { buildImageUpload, buildSceneUpload, buildText } from "@owlbear-rodeo/sdk";
 import { EXTENSION_ID, INVENTORY_META_KEY, MESSAGE_CHANNEL, PARTY_META_KEY, PERMISSIONS_META_KEY, ROLL_LABEL_META_KEY, SHEETS_META_KEY, TOKEN_META_KEY, TURN_META_KEY } from "./constants";
 import type { CharacterSheet, ChatMessage, PartyCharacterSummary, PermissionSettings, SharedInventoryItem, SharedSheet, TurnEntry, TurnState } from "./types";
+import { decryptGmMessage, encryptGmMessage, isGmEnvelope } from "./privateMessages";
 
 const emptyTurns = (): TurnState => ({ round: 1, activeIndex: 0, entries: [] });
 export const DEFAULT_PERMISSIONS: PermissionSettings = { playersEditInventory: true, playersImportContent: false, playersManageTurns: false };
@@ -27,12 +28,15 @@ export function onTurnStateChange(callback: (state: TurnState) => void): () => v
 
 export async function broadcastMessage(message: ChatMessage): Promise<void> {
   if (!OBR.isAvailable || message.visibility === "self") return;
-  await OBR.broadcast.sendMessage(MESSAGE_CHANNEL, message, { destination: "REMOTE" });
+  await OBR.broadcast.sendMessage(MESSAGE_CHANNEL, message.visibility === "gm" ? await encryptGmMessage(message) : message, { destination: "REMOTE" });
 }
 
 export function onBroadcastMessage(callback: (message: ChatMessage) => void): () => void {
   if (!OBR.isAvailable) return () => undefined;
-  return OBR.broadcast.onMessage(MESSAGE_CHANNEL, (event) => callback(event.data as ChatMessage));
+  return OBR.broadcast.onMessage(MESSAGE_CHANNEL, (event) => {
+    if (isGmEnvelope(event.data)) { void decryptGmMessage(event.data).then((message) => { if (message) callback(message); }); }
+    else callback(event.data as ChatMessage);
+  });
 }
 
 export async function getPlayerInfo(): Promise<{ id: string; name: string; role: "GM" | "PLAYER" }> {
@@ -158,7 +162,7 @@ function summarize(sheet: CharacterSheet, ownerId: string, ownerName: string): P
 }
 export async function publishPartyCharacters(sheets: CharacterSheet[]): Promise<void> {
   if (!OBR.isAvailable) return; const ownerId = await OBR.player.getId(); const ownerName = await OBR.player.getName();
-  await OBR.player.setMetadata({ [PARTY_META_KEY]: sheets.map((sheet) => summarize(sheet, ownerId, ownerName)) });
+  await OBR.player.setMetadata({ [PARTY_META_KEY]: sheets.filter((sheet) => sheet.sharing === "party").map((sheet) => summarize(sheet, ownerId, ownerName)) });
 }
 export async function getPartyCharacters(): Promise<PartyCharacterSummary[]> {
   if (!OBR.isAvailable) return [];
@@ -201,7 +205,7 @@ export async function publishSharedSheets(sheets: CharacterSheet[]): Promise<voi
   const reassigned = new Set(existing.filter((entry) => entry.ownerId !== ownerId).map((entry) => entry.sheet.id));
   const next = [
     ...existing.filter((entry) => entry.ownerId !== ownerId),
-    ...sheets.filter((sheet) => !reassigned.has(sheet.id)).map((sheet) => ({ sheet, ownerId, ownerName, editors: mine.get(sheet.id)?.editors ?? [], updatedAt: Date.now() })),
+    ...sheets.filter((sheet) => sheet.sharing === "party" && !reassigned.has(sheet.id)).map((sheet) => ({ sheet, ownerId, ownerName, editors: mine.get(sheet.id)?.editors ?? [], updatedAt: Date.now() })),
   ];
   await OBR.room.setMetadata({ [SHEETS_META_KEY]: next });
 }

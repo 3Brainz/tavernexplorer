@@ -1,7 +1,7 @@
 import { DEFAULT_RULESET } from "./rulesets";
-import type { CampaignDocument, CharacterSheet, ChatMessage, MonsterSheet, SharedInventoryItem, TavernPack, TurnState } from "./types";
+import type { CampaignDocument, CharacterSheet, ChatMessage, MonsterSheet, PlayerNote, SharedInventoryItem, TavernPack, TurnState } from "./types";
 
-export function createTavernPack(data: { characters: CharacterSheet[]; monsters: MonsterSheet[]; campaigns: CampaignDocument[]; sharedInventory: SharedInventoryItem[]; session?: { messages: ChatMessage[]; turnState: TurnState } }): TavernPack {
+export function createTavernPack(data: { characters: CharacterSheet[]; monsters: MonsterSheet[]; campaigns: CampaignDocument[]; sharedInventory: SharedInventoryItem[]; notes?: PlayerNote[]; session?: { messages: ChatMessage[]; turnState: TurnState } }): TavernPack {
   return {
     $schema: "https://tavernexplorer.vercel.app/tavernpack.schema.json",
     format: "tavernpack",
