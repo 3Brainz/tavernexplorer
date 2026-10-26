@@ -40,6 +40,21 @@ export interface InventoryEntry {
   count: number | null;
   equipped: boolean;
   description?: string;
+  modifiers?: StatModifier[];
+}
+
+export interface StatModifier {
+  id: string;
+  target: string;
+  amount: number;
+}
+
+export interface CharacterEffect {
+  id: string;
+  name: string;
+  active: boolean;
+  modifiers: StatModifier[];
+  remainingRounds?: number;
 }
 
 export interface TraitEntry {
@@ -89,6 +104,7 @@ export interface CharacterSheet {
   actions: ActionEntry[];
   spells: SpellEntry[];
   inventory: InventoryEntry[];
+  effects?: CharacterEffect[];
   traits: TraitEntry[];
   currency: Record<string, number>;
   biography: string;
@@ -102,6 +118,15 @@ export interface TurnEntry {
   tokenId?: string;
   characterId?: string;
   hidden?: boolean;
+  initiativeBonus?: number;
+  conditions?: TurnCondition[];
+}
+
+export interface TurnCondition {
+  id: string;
+  name: string;
+  remainingRounds?: number;
+  lastTickRound?: number;
 }
 
 export interface TurnState {
@@ -207,6 +232,18 @@ export interface PlayerNote {
   updatedAt: number;
 }
 
+export interface NoteOrganization {
+  folders: Array<{ id: string; name: string }>;
+  placements: Record<string, string>;
+}
+
+export type NoteWritePermission = "owner" | "owner-gm" | "party";
+export interface SharedNote extends PlayerNote {
+  ownerId: string;
+  ownerName: string;
+  writePermission: NoteWritePermission;
+}
+
 export interface TavernPack {
   $schema: "https://tavernexplorer.vercel.app/tavernpack.schema.json";
   format: "tavernpack";
@@ -219,6 +256,7 @@ export interface TavernPack {
     campaigns: CampaignDocument[];
     sharedInventory: SharedInventoryItem[];
     notes?: PlayerNote[];
+    noteOrganization?: NoteOrganization;
     session?: { messages: ChatMessage[]; turnState: TurnState };
   };
 }

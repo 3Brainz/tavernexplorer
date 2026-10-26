@@ -18,6 +18,7 @@
         "campaigns": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
         "sharedInventory": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
         "notes": { "type": "array", "items": { "$ref": "#/$defs/entity" } },
+        "noteOrganization": { "type": "object", "required": ["folders", "placements"], "properties": { "folders": { "type": "array", "items": { "type": "object", "required": ["id", "name"], "properties": { "id": { "type": "string" }, "name": { "type": "string" } } } }, "placements": { "type": "object", "additionalProperties": { "type": "string" } } } },
         "session": {
           "type": "object",
           "required": ["messages", "turnState"],

@@ -1,7 +1,47 @@
 import { DEFAULT_RULESET } from "./rulesets";
-import type { CampaignDocument, CharacterSheet, ChatMessage, MonsterSheet, PlayerNote, SharedInventoryItem, TavernPack, TurnState } from "./types";
+import type { CampaignDocument, CharacterSheet, ChatMessage, MonsterSheet, NoteOrganization, PlayerNote, SharedInventoryItem, TavernPack, TurnState } from "./types";
 
-export function createTavernPack(data: { characters: CharacterSheet[]; monsters: MonsterSheet[]; campaigns: CampaignDocument[]; sharedInventory: SharedInventoryItem[]; notes?: PlayerNote[]; session?: { messages: ChatMessage[]; turnState: TurnState } }): TavernPack {
+function record(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function requireShape(ok: boolean, path: string): void {
+  if (!ok) throw new Error(`Dato non valido: ${path}`);
+}
+
+export function parseCharacterSheet(value: unknown): CharacterSheet {
+  const sheet = record(value);
+  const identity = record(sheet?.identity);
+  const combat = record(sheet?.combat);
+  const hp = record(combat?.hp);
+  const spellcasting = record(sheet?.spellcasting);
+  requireShape(sheet?.schemaVersion === 1 && typeof sheet.id === "string" && !!sheet.id && typeof sheet.name === "string" && !!sheet.name, "scheda: id, nome o versione");
+  requireShape(!!identity && !!combat && !!hp && !!spellcasting, "scheda: identità, combattimento o magia");
+  requireShape(typeof hp?.current === "number" && typeof hp.max === "number" && !!record(combat?.hitDice) && !!record(combat?.deathSaves) && !!record(sheet?.abilities) && !!record(sheet?.skills) && !!record(spellcasting?.slots), "scheda: statistiche");
+  for (const key of ["actions", "spells", "inventory", "traits", "importWarnings"]) requireShape(Array.isArray(sheet?.[key]), `scheda: ${key}`);
+  requireShape(!!record(sheet?.currency), "scheda: monete");
+  return sheet as unknown as CharacterSheet;
+}
+
+function validateMonster(value: unknown): boolean {
+  const monster = record(value);
+  return !!monster && typeof monster.id === "string" && typeof monster.name === "string" && !!record(monster.hp) && !!record(monster.abilities)
+    && ["traits", "actions", "reactions", "legendaryActions"].every((key) => Array.isArray(monster[key]));
+}
+
+function validateChapter(value: unknown): boolean {
+  const chapter = record(value);
+  return !!chapter && typeof chapter.id === "string" && typeof chapter.title === "string" && typeof chapter.body === "string"
+    && Array.isArray(chapter.images) && Array.isArray(chapter.children) && chapter.children.every(validateChapter);
+}
+
+function validateCampaign(value: unknown): boolean {
+  const campaign = record(value);
+  return !!campaign && typeof campaign.id === "string" && typeof campaign.title === "string"
+    && Array.isArray(campaign.chapters) && campaign.chapters.every(validateChapter);
+}
+
+export function createTavernPack(data: { characters: CharacterSheet[]; monsters: MonsterSheet[]; campaigns: CampaignDocument[]; sharedInventory: SharedInventoryItem[]; notes?: PlayerNote[]; noteOrganization?: NoteOrganization; session?: { messages: ChatMessage[]; turnState: TurnState } }): TavernPack {
   return {
     $schema: "https://tavernexplorer.vercel.app/tavernpack.schema.json",
     format: "tavernpack",
@@ -13,8 +53,19 @@ export function createTavernPack(data: { characters: CharacterSheet[]; monsters:
 }
 
 export function parseTavernPack(value: unknown): TavernPack {
-  if (!value || typeof value !== "object") throw new Error("TavernPack non valido");
-  const pack = value as Partial<TavernPack>;
-  if (pack.format !== "tavernpack" || pack.formatVersion !== "1.0.0" || !pack.data) throw new Error("Formato TavernPack non supportato");
-  return pack as TavernPack;
+  const pack = record(value);
+  if (pack?.format !== "tavernpack" || pack.formatVersion !== "1.0.0") throw new Error("Formato TavernPack non supportato");
+  const data = record(pack.data);
+  requireShape(!!data, "TavernPack: dati mancanti");
+  requireShape(Array.isArray(data?.characters) && data.characters.every((sheet: unknown) => { try { parseCharacterSheet(sheet); return true; } catch { return false; } }), "TavernPack: schede");
+  requireShape(Array.isArray(data?.monsters) && data.monsters.every(validateMonster), "TavernPack: mostri");
+  requireShape(Array.isArray(data?.campaigns) && data.campaigns.every(validateCampaign), "TavernPack: avventure");
+  requireShape(Array.isArray(data?.sharedInventory) && data.sharedInventory.every((item: unknown) => { const row = record(item); return !!row && typeof row.id === "string" && typeof row.name === "string" && typeof row.quantity === "number"; }), "TavernPack: inventario");
+  requireShape(data?.notes === undefined || Array.isArray(data.notes) && data.notes.every((item: unknown) => { const note = record(item); return !!note && typeof note.id === "string" && typeof note.title === "string" && typeof note.body === "string"; }), "TavernPack: note");
+  const organization = record(data?.noteOrganization);
+  const placements = record(organization?.placements);
+  requireShape(data?.noteOrganization === undefined || !!organization && Array.isArray(organization.folders) && organization.folders.every((item: unknown) => { const folder = record(item); return !!folder && typeof folder.id === "string" && typeof folder.name === "string"; }) && !!placements && Object.values(placements).every((id) => typeof id === "string"), "TavernPack: cartelle delle note");
+  const session = record(data?.session);
+  requireShape(data?.session === undefined || !!session && Array.isArray(session.messages) && Array.isArray(record(session.turnState)?.entries), "TavernPack: sessione");
+  return pack as unknown as TavernPack;
 }

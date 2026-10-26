@@ -11,5 +11,7 @@ import "./editor.css";
 import "./floating.css";
 import "./refresh.css";
 import "./notes.css";
+import "./effects.css";
+import "./turns.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);

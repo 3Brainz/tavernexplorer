@@ -1,7 +1,10 @@
 import OBR, { buildImageUpload, buildSceneUpload, buildText } from "@owlbear-rodeo/sdk";
-import { EXTENSION_ID, INVENTORY_META_KEY, MESSAGE_CHANNEL, PARTY_META_KEY, PERMISSIONS_META_KEY, ROLL_LABEL_META_KEY, SHEETS_META_KEY, TOKEN_META_KEY, TURN_META_KEY } from "./constants";
-import type { CharacterSheet, ChatMessage, PartyCharacterSummary, PermissionSettings, SharedInventoryItem, SharedSheet, TurnEntry, TurnState } from "./types";
+import { EXTENSION_ID, INVENTORY_META_KEY, MESSAGE_CHANNEL, PARTY_META_KEY, PERMISSIONS_META_KEY, ROLL_LABEL_META_KEY, SHARED_NOTES_META_KEY, SHEETS_META_KEY, TOKEN_META_KEY, TURN_META_KEY } from "./constants";
+import type { CharacterSheet, ChatMessage, PartyCharacterSummary, PermissionSettings, SharedInventoryItem, SharedNote, SharedSheet, TurnEntry, TurnState } from "./types";
 import { decryptGmMessage, encryptGmMessage, isGmEnvelope } from "./privateMessages";
+import { canManageNote, canWriteNote, readSharedNotes } from "./sharedNotes";
+import { replaceTurnEntries } from "./turns";
+import { effectiveSheet } from "./effects";
 
 const emptyTurns = (): TurnState => ({ round: 1, activeIndex: 0, entries: [] });
 export const DEFAULT_PERMISSIONS: PermissionSettings = { playersEditInventory: true, playersImportContent: false, playersManageTurns: false };
@@ -49,7 +52,7 @@ export async function setActiveCharacter(characterId: string | null): Promise<vo
   await OBR.player.setMetadata({ [`${EXTENSION_ID}/active-character`]: characterId });
 }
 
-export async function addSelectedTokenToTurns(characterId: string, characterName: string, initiative: number): Promise<void> {
+export async function addSelectedTokenToTurns(characterId: string, characterName: string, initiative: number, initiativeBonus = 0): Promise<void> {
   if (!OBR.isAvailable) throw new Error("Apri TavernExplorer dentro Owlbear Rodeo");
   const selected = await OBR.player.getSelection();
   const tokenId = selected?.[0];
@@ -58,10 +61,8 @@ export async function addSelectedTokenToTurns(characterId: string, characterName
     for (const item of items) item.metadata[TOKEN_META_KEY] = { characterId };
   });
   const state = await getTurnState();
-  const entry: TurnEntry = { id: crypto.randomUUID(), name: characterName, initiative, tokenId, characterId };
-  state.entries = [...state.entries.filter((item) => item.tokenId !== tokenId), entry].sort((a, b) => b.initiative - a.initiative);
-  state.activeIndex = Math.min(state.activeIndex, Math.max(0, state.entries.length - 1));
-  await setTurnState(state);
+  const entry: TurnEntry = { id: crypto.randomUUID(), name: characterName, initiative, initiativeBonus, tokenId, characterId };
+  await setTurnState(replaceTurnEntries(state, [...state.entries.filter((item) => item.tokenId !== tokenId), entry]));
 }
 
 export async function uploadMapAsScene(file: File, sceneName: string): Promise<void> {
@@ -158,6 +159,7 @@ export async function openFloatingPanel(view: "messages" | "turns", position?: {
 }
 
 function summarize(sheet: CharacterSheet, ownerId: string, ownerName: string): PartyCharacterSummary {
+  sheet = effectiveSheet(sheet);
   return { id: sheet.id, ownerId, ownerName, name: sheet.name, avatar: sheet.avatar, classDisplay: sheet.identity.classDisplay, race: sheet.identity.race, level: sheet.identity.level, ruleset: sheet.ruleset, ac: sheet.combat.ac, hp: sheet.combat.hp, initiative: sheet.combat.initiative, abilities: sheet.abilities, spellSaveDc: sheet.spellcasting.saveDc, spellAttackBonus: sheet.spellcasting.attackBonus };
 }
 export async function publishPartyCharacters(sheets: CharacterSheet[]): Promise<void> {
@@ -245,6 +247,43 @@ export async function setSharedInventory(items: SharedInventoryItem[]): Promise<
 export function onSharedInventoryChange(callback: (items: SharedInventoryItem[]) => void): () => void {
   if (!OBR.isAvailable) return () => undefined;
   return OBR.room.onMetadataChange((metadata) => callback(Array.isArray(metadata[INVENTORY_META_KEY]) ? metadata[INVENTORY_META_KEY] as unknown as SharedInventoryItem[] : []));
+}
+
+export async function getSharedNotes(): Promise<SharedNote[]> {
+  if (!OBR.isAvailable) return [];
+  return readSharedNotes((await OBR.room.getMetadata())[SHARED_NOTES_META_KEY]);
+}
+
+export function onSharedNotesChange(callback: (notes: SharedNote[]) => void): () => void {
+  if (!OBR.isAvailable) return () => undefined;
+  return OBR.room.onMetadataChange((metadata) => callback(readSharedNotes(metadata[SHARED_NOTES_META_KEY])));
+}
+
+export async function saveSharedNote(note: SharedNote): Promise<void> {
+  if (!OBR.isAvailable) throw new Error("Apri TavernExplorer dentro Owlbear Rodeo per condividere le note");
+  const player = await getPlayerInfo();
+  const existing = await getSharedNotes();
+  const previous = existing.find((item) => item.id === note.id);
+  if (previous && !canWriteNote(previous, player.id, player.role)) throw new Error("Non hai il permesso di modificare questa nota");
+  if (previous && previous.updatedAt !== note.updatedAt) throw new Error("La nota è stata aggiornata da un altro giocatore. Ricaricala prima di salvare.");
+  if (!previous && note.ownerId !== player.id) throw new Error("Puoi pubblicare solo le tue note");
+  if (previous && (previous.ownerId !== note.ownerId || previous.ownerName !== note.ownerName ||
+      previous.writePermission !== note.writePermission && !canManageNote(previous, player.id))) {
+    throw new Error("Solo l'autore può cambiare i permessi della nota");
+  }
+  const next = [...existing.filter((item) => item.id !== note.id), { ...note, updatedAt: Math.max(Date.now(), (previous?.updatedAt ?? 0) + 1) }];
+  if (new Blob([JSON.stringify(next)]).size > 24_000) throw new Error("Note condivise troppo grandi per la stanza Owlbear (limite 24 KB)");
+  await OBR.room.setMetadata({ [SHARED_NOTES_META_KEY]: next });
+}
+
+export async function deleteSharedNote(noteId: string): Promise<void> {
+  if (!OBR.isAvailable) return;
+  const player = await getPlayerInfo();
+  const existing = await getSharedNotes();
+  const note = existing.find((item) => item.id === noteId);
+  if (!note) return;
+  if (!canManageNote(note, player.id)) throw new Error("Solo l'autore può rimuovere la condivisione");
+  await OBR.room.setMetadata({ [SHARED_NOTES_META_KEY]: existing.filter((item) => item.id !== noteId) });
 }
 
 export async function getPermissions(): Promise<PermissionSettings> {

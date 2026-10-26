@@ -24,6 +24,9 @@ importers:
       '@eslint/js':
         specifier: ^9.34.0
         version: 9.39.5
+      '@grinev/boardown-cli':
+        specifier: 0.10.0
+        version: 0.10.0
       '@types/react':
         specifier: ^19.1.10
         version: 19.2.18
@@ -370,6 +373,11 @@ packages:
   '@eslint/plugin-kit@0.4.1':
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@grinev/boardown-cli@0.10.0':
+    resolution: {integrity: sha512-wUjv0+rq21WU83p4fGcwmXdltxcSAaAGcng+BzIKnmNGQn8b885MmvwMhd61QwkMYwBVWI8KlTsMVTR+yJsMCg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1700,6 +1708,8 @@ snapshots:
     dependencies:
       '@eslint/core': 0.17.0
       levn: 0.4.1
+
+  '@grinev/boardown-cli@0.10.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

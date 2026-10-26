@@ -1,0 +1,10 @@
+import { ModifierEditor } from "./ModifierEditor";
+import type { CharacterSheet } from "./types";
+import { Button, Card, Input } from "./ui";
+
+export function EffectsEditor({ sheet, onUpdate }: { sheet: CharacterSheet; onUpdate: (update: (sheet: CharacterSheet) => CharacterSheet) => void }) {
+  const effects = sheet.effects ?? [];
+  return <Card><div className="editor-heading"><h2>Buff e debuff</h2><Button onClick={() => onUpdate((next) => { (next.effects ??= []).push({ id: crypto.randomUUID(), name: "Nuovo effetto", active: true, modifiers: [] }); return next; })}>Aggiungi</Button></div><p className="effect-note">I modificatori attivi si sommano ai valori di base e ai tiri. Un valore negativo è un debuff. Le durate sono gestite manualmente.</p>
+    {effects.map((effect) => <div className="effect-card" key={effect.id}><div className="effect-head"><label><input type="checkbox" checked={effect.active} onChange={(event) => onUpdate((next) => { next.effects!.find((item) => item.id === effect.id)!.active = event.target.checked; return next; })}/> Attivo</label><Button variant="destructive" onClick={() => onUpdate((next) => { next.effects = next.effects!.filter((item) => item.id !== effect.id); return next; })}>Elimina</Button></div><Input aria-label="Nome effetto" value={effect.name} onChange={(event) => onUpdate((next) => { next.effects!.find((item) => item.id === effect.id)!.name = event.target.value; return next; })}/><label className="effect-note">Round rimasti (vuoto = senza scadenza) <Input type="number" min="0" value={effect.remainingRounds ?? ""} onChange={(event) => onUpdate((next) => { next.effects!.find((item) => item.id === effect.id)!.remainingRounds = event.target.value === "" ? undefined : Math.max(0, Number(event.target.value) || 0); return next; })}/></label><ModifierEditor modifiers={effect.modifiers} onChange={(modifiers) => onUpdate((next) => { next.effects!.find((item) => item.id === effect.id)!.modifiers = modifiers; return next; })}/></div>)}
+  </Card>;
+}
