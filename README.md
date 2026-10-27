@@ -96,6 +96,10 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
   scheda al token selezionato, la scollega o ne trasferisce la proprieta' a un
   altro giocatore. Il menu contestuale del token apre la scheda collegata;
   non assegna automaticamente la scheda attiva ai token scollegati.
+- Dal menu contestuale si possono aggiungere o rimuovere più token dal tracker.
+  Per ogni token collegato a una scheda disponibile viene tirata l'iniziativa
+  usando il suo bonus; per gli altri viene chiesto un valore. Il pulsante
+  “Trova sulla mappa” nel tracker centra il token nella scena aperta.
 - Import bestiario: dopo aver caricato un manuale o un file JSON, si scelgono
   uno o piu' mostri. Solo quelli selezionati vengono salvati e caricati come
   token `CHARACTER` con nome `beasts/<nome>`. Quando il mirror non espone
@@ -171,7 +175,7 @@ La GitHub Action esegue build, lint e test su ogni push a `main` e sulle pull
 request. Il progetto Vercel collegato a GitHub pubblica automaticamente i push
 su `main`.
 
-## Limiti della versione 0.6
+## Limiti della versione 0.6.1
 
 - L'importatore richiede il blocco `normalized` di `roll20-sheet-export`.
 - Le formule ricavate dalle descrizioni vengono segnalate nelle note d'import.
@@ -193,6 +197,9 @@ su `main`.
   documentano upload e selezione di immagini e scene, non uno store generico
   di documenti JSON. La scelta di uno storage più capiente e di ACL applicate
   dal server richiede una valutazione dedicata delle API e del ciclo di vita dei dati.
+- L'[API viewport](https://docs.owlbear.rodeo/extensions/apis/viewport/) consente
+  il centraggio del token per il solo giocatore che preme il pulsante. La
+  posizione dei token resta gestita dalla scena Owlbear.
 - Lo storico non viene recuperato da chi entra nella stanza dopo l'invio.
 - I riposi aggiornano PF, dadi vita, slot e contatori; esaurimento, riduzioni
   permanenti del massimo dei PF e ripristini speciali di classe richiedono

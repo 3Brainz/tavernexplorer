@@ -1,15 +1,18 @@
 import OBR from "@owlbear-rodeo/sdk";
-import { EXTENSION_ID, PERMISSIONS_META_KEY, TURN_META_KEY } from "./constants";
+import { EXTENSION_ID, PERMISSIONS_META_KEY, SHEETS_META_KEY, TURN_META_KEY } from "./constants";
+import { roll } from "./dice";
+import { storage } from "./storage";
+import { createTokenTurn } from "./tokenTurns";
 import { replaceTurnEntries } from "./turns";
 import { writeRoomMetadata } from "./roomMetadata";
-import type { TurnState } from "./types";
+import type { SharedSheet, TurnState } from "./types";
 
 OBR.onReady(async () => {
   await OBR.contextMenu.create({
     id: `${EXTENSION_ID}/token-menu`,
     icons: [{
       icon: "/icon.svg",
-      label: "TavernExplorer: scheda / iniziativa",
+      label: "TavernExplorer: apri scheda",
       filter: { every: [{ key: "layer", value: "CHARACTER" }] },
     }],
     onClick: async (context, elementId) => {
@@ -40,13 +43,16 @@ OBR.onReady(async () => {
       const alreadyPresent = context.items.every((item) => current.entries.some((entry) => entry.tokenId === item.id));
       const entries = alreadyPresent ? current.entries.filter((entry) => !ids.has(entry.tokenId ?? "")) : [...current.entries];
       if (!alreadyPresent) {
-        const playerMeta = await OBR.player.getMetadata();
-        const characterId = playerMeta[`${EXTENSION_ID}/active-character`] as string | undefined;
+        const sharedSheets = roomMeta[SHEETS_META_KEY];
+        const sheets: SharedSheet[] = Array.isArray(sharedSheets) ? sharedSheets : [];
+        const linkedSheets = [...sheets.map((entry) => entry.sheet), ...storage.characters.get()];
         for (const item of context.items) {
           if (entries.some((entry) => entry.tokenId === item.id)) continue;
-          const initiativeText = window.prompt(`Iniziativa per ${item.name}`, "0");
-          if (initiativeText === null) continue;
-          entries.push({ id: crypto.randomUUID(), tokenId: item.id, characterId, name: item.name || "Senza nome", initiative: Number(initiativeText) || 0 });
+          const entry = createTokenTurn(item, linkedSheets,
+            (bonus) => roll(`1d20${bonus >= 0 ? "+" : ""}${bonus}`, "normal").total,
+            (name) => { const value = window.prompt(`Iniziativa per ${name}`, "0"); return value === null ? null : Number(value) || 0; },
+          );
+          if (entry) entries.push(entry);
         }
       }
       try { await writeRoomMetadata({ [TURN_META_KEY]: replaceTurnEntries(current, entries) }); }

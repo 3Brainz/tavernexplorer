@@ -131,6 +131,13 @@ export async function getTokenAssignments(): Promise<Array<{ tokenId: string; to
   });
 }
 
+export async function focusTurnToken(tokenId: string): Promise<void> {
+  if (!OBR.isAvailable || !(await OBR.scene.isReady())) throw new Error("Apri una scena Owlbear per trovare il token");
+  const token = (await OBR.scene.items.getItems([tokenId]))[0];
+  if (!token) throw new Error("Il token non è più nella scena aperta");
+  await OBR.viewport.setPosition(token.position);
+}
+
 // Riassegna il proprietario di una scheda condivisa. Il nuovo owner potra' modificarla.
 export async function assignSheetToPlayer(sheetId: string, ownerId: string, ownerName: string): Promise<void> {
   if (!OBR.isAvailable) return;

@@ -23,6 +23,42 @@ function ConditionEditor({ entry, state, canManage, onChange, onRollInitiative }
   </details>;
 }
 
-export function TurnOrder({ state, canManage, onChange, onNext, onPrevious, onRollInitiative, active, onAttach }: { state: TurnState; canManage: boolean; onChange: (state: TurnState) => void; onNext: () => void; onPrevious: () => void; onRollInitiative: (entry: TurnEntry) => void; active: CharacterSheet | null; onAttach: () => void }) {
-  return <div className="stack"><section className="turn-header"><div><small>Round</small><strong>{state.round}</strong></div><div className="turn-navigation"><button onClick={onPrevious} disabled={!canManage || !state.entries.length || (state.round === 1 && state.activeIndex === 0)} aria-label="Turno precedente">←</button><button onClick={onNext} disabled={!canManage || !state.entries.length}>Turno successivo →</button></div></section><button className="primary" onClick={onAttach} disabled={!canManage || !active}>Collega scheda e token selezionato</button><section className="turn-list"><datalist id="turn-condition-suggestions">{CONDITION_SUGGESTIONS.map((condition) => <option key={condition} value={condition}/>)}</datalist>{state.entries.length === 0 && <p className="turn-empty">Nessun partecipante. Seleziona un token sulla mappa e collegalo a una scheda.</p>}{state.entries.map((entry, index) => <article className={`turn-entry ${index === state.activeIndex ? "current" : ""}`} key={entry.id}><div className="turn-entry-main"><span className="order">{index + 1}</span><div><strong>{entry.name}</strong>{index === state.activeIndex && <small>Turno attuale</small>}</div><input aria-label={`Iniziativa di ${entry.name}`} type="number" value={entry.initiative} disabled={!canManage} onChange={(event) => onChange(setTurnInitiative(state, entry.id, Number(event.target.value) || 0))}/>{canManage && <button className="danger" aria-label={`Rimuovi ${entry.name}`} onClick={() => onChange(replaceTurnEntries(state, state.entries.filter((item) => item.id !== entry.id)))}>×</button>}</div><ConditionEditor entry={entry} state={state} canManage={canManage} onChange={onChange} onRollInitiative={onRollInitiative}/></article>)}</section>{canManage && state.entries.length > 0 && <button onClick={() => onChange({ round: 1, activeIndex: 0, entries: [] })}>Svuota ordine</button>}</div>;
+interface TurnOrderProps {
+  state: TurnState;
+  canManage: boolean;
+  onChange: (state: TurnState) => void;
+  onNext: () => void;
+  onPrevious: () => void;
+  onRollInitiative: (entry: TurnEntry) => void;
+  onFocusToken?: (tokenId: string) => void;
+  active: CharacterSheet | null;
+  onAttach: () => void;
+}
+
+export function TurnOrder({ state, canManage, onChange, onNext, onPrevious, onRollInitiative, onFocusToken, active, onAttach }: TurnOrderProps) {
+  return <div className="stack">
+    <section className="turn-header">
+      <div><small>Round</small><strong>{state.round}</strong></div>
+      <div className="turn-navigation">
+        <button onClick={onPrevious} disabled={!canManage || !state.entries.length || (state.round === 1 && state.activeIndex === 0)} aria-label="Turno precedente">←</button>
+        <button onClick={onNext} disabled={!canManage || !state.entries.length}>Turno successivo →</button>
+      </div>
+    </section>
+    <button className="primary" onClick={onAttach} disabled={!canManage || !active}>Collega scheda e token selezionato</button>
+    <section className="turn-list">
+      <datalist id="turn-condition-suggestions">{CONDITION_SUGGESTIONS.map((condition) => <option key={condition} value={condition}/>)}</datalist>
+      {state.entries.length === 0 && <p className="turn-empty">Nessun partecipante. Seleziona un token sulla mappa e collegalo a una scheda.</p>}
+      {state.entries.map((entry, index) => <article className={`turn-entry ${index === state.activeIndex ? "current" : ""}`} key={entry.id}>
+        <div className="turn-entry-main">
+          <span className="order">{index + 1}</span>
+          <div><strong>{entry.name}</strong>{index === state.activeIndex && <small>Turno attuale</small>}</div>
+          <input aria-label={`Iniziativa di ${entry.name}`} type="number" value={entry.initiative} disabled={!canManage} onChange={(event) => onChange(setTurnInitiative(state, entry.id, Number(event.target.value) || 0))}/>
+          {entry.tokenId && onFocusToken && <button aria-label={`Trova ${entry.name} sulla mappa`} title="Trova sulla mappa" onClick={() => { if (entry.tokenId) onFocusToken(entry.tokenId); }}>⌖</button>}
+          {canManage && <button className="danger" aria-label={`Rimuovi ${entry.name}`} onClick={() => onChange(replaceTurnEntries(state, state.entries.filter((item) => item.id !== entry.id)))}>×</button>}
+        </div>
+        <ConditionEditor entry={entry} state={state} canManage={canManage} onChange={onChange} onRollInitiative={onRollInitiative}/>
+      </article>)}
+    </section>
+    {canManage && state.entries.length > 0 && <button onClick={() => onChange({ round: 1, activeIndex: 0, entries: [] })}>Svuota ordine</button>}
+  </div>;
 }
