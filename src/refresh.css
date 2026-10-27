@@ -53,7 +53,7 @@ body {
 
 .messages { min-height: 0; height: min(70vh, 650px); grid-template-rows: auto minmax(0, 1fr) auto; }
 .floating-handle + main { padding: .65rem; }
-.floating-handle + main .messages { height: calc(100vh - 4.15rem); }
+.floating-handle ~ main .messages { height: calc(100vh - 4.15rem); }
 .message-list { min-height: 0; padding-right: .2rem; }
 .message-filters { display:flex; gap:.35rem; overflow:auto; padding-bottom:.2rem; }
 .message-filters button { border:1px solid hsl(var(--border)); background:hsl(var(--secondary)); color:hsl(var(--muted-foreground)); border-radius:999px; padding:.35rem .7rem; white-space:nowrap; font-size:.78rem; }

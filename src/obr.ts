@@ -1,4 +1,4 @@
-import OBR, { buildImageUpload, buildSceneUpload, buildText } from "@owlbear-rodeo/sdk";
+import OBR, { buildImageUpload, buildSceneUpload, buildText, isImage } from "@owlbear-rodeo/sdk";
 import { EXTENSION_ID, INVENTORY_META_KEY, MESSAGE_CHANNEL, PARTY_META_KEY, PERMISSIONS_META_KEY, ROLL_LABEL_META_KEY, SHARED_NOTES_META_KEY, SHEETS_META_KEY, TOKEN_META_KEY, TURN_META_KEY } from "./constants";
 import type { CharacterSheet, ChatMessage, PartyCharacterSummary, PermissionSettings, SharedInventoryItem, SharedNote, SharedSheet, TurnEntry, TurnState } from "./types";
 import { decryptGmMessage, encryptGmMessage, isGmEnvelope } from "./privateMessages";
@@ -142,12 +142,13 @@ export async function getCharacterTokens(): Promise<CharacterToken[]> {
     .sort((a, b) => Number(Boolean(a.characterId)) - Number(Boolean(b.characterId)) || a.tokenName.localeCompare(b.tokenName, "it"));
 }
 
-export async function focusTurnToken(tokenId: string): Promise<void> {
-  if (!OBR.isAvailable || !(await OBR.scene.isReady())) throw new Error("Apri una scena Owlbear per trovare il token");
-  const token = (await OBR.scene.items.getItems([tokenId]))[0];
-  if (!token) throw new Error("Il token non è più nella scena aperta");
-  await OBR.viewport.setPosition(token.position);
+export async function getTokenImages(tokenIds: string[]): Promise<Record<string, string>> {
+  if (!OBR.isAvailable || !tokenIds.length || !(await OBR.scene.isReady())) return {};
+  const items = await OBR.scene.items.getItems(tokenIds);
+  return Object.fromEntries(items.filter(isImage).map((item) => [item.id, item.image.url]));
 }
+
+export { highlightToken } from "./tokenHighlight";
 
 // Riassegna il proprietario di una scheda condivisa. Il nuovo owner potra' modificarla.
 export async function assignSheetToPlayer(sheetId: string, ownerId: string, ownerName: string): Promise<void> {
@@ -183,12 +184,7 @@ export async function showRollOnMap(characterId: string, label: string, total: n
   setTimeout(() => { void OBR.scene.items.deleteItems([text.id]).catch(() => undefined); }, 6000);
 }
 
-export async function openFloatingPanel(view: "messages" | "turns", position?: { left: number; top: number }): Promise<void> {
-  if (!OBR.isAvailable) return;
-  const saved = localStorage.getItem(`${EXTENSION_ID}/${view}-position`); const fallback = saved ? JSON.parse(saved) as { left: number; top: number } : { left: 24, top: 100 }; const anchorPosition = position ?? fallback;
-  localStorage.setItem(`${EXTENSION_ID}/${view}-position`, JSON.stringify(anchorPosition));
-  await OBR.popover.open({ id: `${EXTENSION_ID}/${view}-panel`, url: `/?view=${view}&left=${anchorPosition.left}&top=${anchorPosition.top}`, width: view === "messages" ? 400 : 340, height: view === "messages" ? 620 : 500, anchorReference: "POSITION", anchorPosition, anchorOrigin: { horizontal: "LEFT", vertical: "TOP" }, transformOrigin: { horizontal: "LEFT", vertical: "TOP" }, disableClickAway: true });
-}
+export { getFloatingPanelPosition, getFloatingPanelSize, openFloatingPanel, openPanelForPlayers, resizeFloatingPanel, type PanelSize } from "./floatingPanels";
 
 function summarize(sheet: CharacterSheet, ownerId: string, ownerName: string): PartyCharacterSummary {
   sheet = effectiveSheet(sheet);

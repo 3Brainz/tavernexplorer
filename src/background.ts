@@ -4,6 +4,8 @@ import { roll } from "./dice";
 import { storage } from "./storage";
 import { createTokenTurn } from "./tokenTurns";
 import { setupTokenStatus } from "./tokenStatus";
+import { setupTurnHighlight } from "./tokenHighlight";
+import { setupRemotePanelOpening } from "./floatingPanels";
 import { replaceTurnEntries } from "./turns";
 import { writeRoomMetadata } from "./roomMetadata";
 import type { SharedSheet, TurnState } from "./types";
@@ -62,4 +64,6 @@ OBR.onReady(async () => {
   });
 
   setupTokenStatus();
+  setupRemotePanelOpening();
+  setupTurnHighlight((metadata) => metadata[TURN_META_KEY] as TurnState | undefined);
 });

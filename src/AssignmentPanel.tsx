@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getCharacterTokens, focusTurnToken, OBR, setTokenCharacter, setTokenOwner, type CharacterToken } from "./obr";
+import { getCharacterTokens, highlightToken, OBR, setTokenCharacter, setTokenOwner, type CharacterToken } from "./obr";
 import type { SharedSheet } from "./types";
 import { Alert, Button, Card, Input, Select } from "./ui";
 
@@ -104,7 +104,7 @@ export function AssignmentPanel({ sheets, members, onAssignPlayer }: AssignmentP
               {!members.some((member) => member.id === token.ownerId) && <option value={token.ownerId}>{sheets.find((entry) => entry.ownerId === token.ownerId)?.ownerName ?? "Proprietario non connesso"}</option>}
               {members.map((member) => <option key={member.id} value={member.id}>{member.name}{member.role === "GM" ? " · GM" : ""}</option>)}
             </Select></label>
-            <Button variant="ghost" title={`Trova ${token.tokenName} sulla mappa`} aria-label={`Trova ${token.tokenName} sulla mappa`} onClick={() => { void run(() => focusTurnToken(token.tokenId), `${token.tokenName} trovato sulla mappa.`); }}>⌖</Button>
+            <Button variant="ghost" title={`Trova ${token.tokenName} sulla mappa`} aria-label={`Trova ${token.tokenName} sulla mappa`} onClick={() => { void run(() => highlightToken(token.tokenId), `${token.tokenName} evidenziato sulla mappa.`); }}>⌖</Button>
           </div>
         </div>)}
       </div>

@@ -109,8 +109,8 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
   ([documentazione](https://docs.owlbear.rodeo/docs/permissions/)).
 - Dal menu contestuale si possono aggiungere o rimuovere più token dal tracker.
   Per ogni token collegato a una scheda disponibile viene tirata l'iniziativa
-  usando il suo bonus; per gli altri viene chiesto un valore. Il pulsante
-  “Trova sulla mappa” nel tracker centra il token nella scena aperta.
+  usando il suo bonus; per gli altri viene chiesto un valore. Cliccando un nome
+  nel tracker, il token viene evidenziato da un cerchio locale che svanisce.
 - Dalla scheda aperta dal token e dal Party si applicano danni, cure e PF
   temporanei indicando una quantità. L'anteprima mostra i PF risultanti;
   i danni consumano prima i PF temporanei, le cure si fermano al massimo
@@ -157,8 +157,8 @@ formato generale della scheda.
 ## Permessi
 
 Il GM trova una sezione **Permessi** nell’estensione. Le impostazioni vengono
-salvate nei metadata della stanza e controllano modifica dell’inventario comune,
-gestione di bestiario/avventure e ordine dei turni per i giocatori.
+salvate nei metadata della stanza e controllano modifica dell’inventario comune
+e ordine dei turni per i giocatori. Bestiario e Avventure sono visibili solo al GM.
 
 ## Backup TavernPack
 

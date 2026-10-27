@@ -14,6 +14,7 @@ vi.mock("./obr", () => ({
   OBR: { isAvailable: false, isReady: false },
   DEFAULT_PERMISSIONS: { playersEditInventory: true, playersImportContent: false, playersManageTurns: false },
   broadcastMessage: async () => undefined,
+  getTokenImages: async () => ({}),
 }));
 vi.mock("./fivetoolsApi", () => ({
   listBestiarySources: async () => [{ id: "XMM", label: "XMM", file: "bestiary-xmm.json" }],
