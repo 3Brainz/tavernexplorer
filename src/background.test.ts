@@ -15,8 +15,8 @@ vi.mock("@owlbear-rodeo/sdk", () => ({ default: {
   onReady: (callback: () => Promise<void>) => { mock.ready = callback; },
   contextMenu: { create: async (menu: typeof mock.menus[number]) => { mock.menus.push(menu); } },
   player: { getRole: async () => mock.role, getMetadata: async () => ({}) },
-  room: { getMetadata: async () => ({}), setMetadata: mock.setMetadata },
-  scene: { items: { updateItems: mock.updateItems } },
+  room: { getMetadata: async () => ({}), setMetadata: mock.setMetadata, onMetadataChange: () => () => {} },
+  scene: { isReady: async () => false, onReadyChange: () => () => {}, items: { updateItems: mock.updateItems, onChange: () => () => {} } },
   notification: { show: mock.notify },
   popover: { open: mock.open },
 } }));

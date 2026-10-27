@@ -113,6 +113,11 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
   i danni consumano prima i PF temporanei, le cure si fermano al massimo
   effettivo e azzerano i salvataggi morte quando restituiscono PF. I PF
   temporanei non si sommano. I casi speciali dei danni a 0 PF restano manuali.
+- Sulla scena, etichette temporanee mostrano PF ridotti, PF temporanei e
+  condizioni con durata dei token collegati. Le etichette sono generate in
+  locale per ciascun partecipante tramite [scene.local](https://docs.owlbear.rodeo/extensions/apis/scene/local/):
+  non occupano i metadata della stanza né diventano oggetti permanenti della
+  scena. I token nascosti non producono etichette per i giocatori.
 - Import bestiario: dopo aver caricato un manuale o un file JSON, si scelgono
   uno o piu' mostri. Solo quelli selezionati vengono salvati e caricati come
   token `CHARACTER` con nome `beasts/<nome>`. Quando il mirror non espone
@@ -188,7 +193,7 @@ La GitHub Action esegue build, lint e test su ogni push a `main` e sulle pull
 request. Il progetto Vercel collegato a GitHub pubblica automaticamente i push
 su `main`.
 
-## Limiti della versione 0.7.0
+## Limiti della versione 0.7.1
 
 - L'importatore richiede il blocco `normalized` di `roll20-sheet-export`.
 - Le formule ricavate dalle descrizioni vengono segnalate nelle note d'import.

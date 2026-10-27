@@ -16,6 +16,7 @@ export const PERMISSIONS_META_KEY = `${EXTENSION_ID}/permissions`;
 export const PARTY_META_KEY = `${EXTENSION_ID}/party-characters`;
 export const SHEETS_META_KEY = `${EXTENSION_ID}/party-sheets`;
 export const ROLL_LABEL_META_KEY = `${EXTENSION_ID}/roll-label`;
+export const TOKEN_STATUS_META_KEY = `${EXTENSION_ID}/token-status`;
 
 export const ABILITY_LABELS: Record<string, string> = {
   strength: "Forza",

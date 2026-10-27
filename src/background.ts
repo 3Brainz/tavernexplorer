@@ -3,6 +3,7 @@ import { EXTENSION_ID, PERMISSIONS_META_KEY, SHEETS_META_KEY, TURN_META_KEY } fr
 import { roll } from "./dice";
 import { storage } from "./storage";
 import { createTokenTurn } from "./tokenTurns";
+import { setupTokenStatus } from "./tokenStatus";
 import { replaceTurnEntries } from "./turns";
 import { writeRoomMetadata } from "./roomMetadata";
 import type { SharedSheet, TurnState } from "./types";
@@ -59,4 +60,6 @@ OBR.onReady(async () => {
       catch (error) { await OBR.notification.show(error instanceof Error ? error.message : "Ordine dei turni non salvato", "ERROR"); }
     },
   });
+
+  setupTokenStatus();
 });

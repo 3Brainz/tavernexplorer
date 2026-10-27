@@ -101,3 +101,15 @@ order: 1300
 ---
 
 Registrare danni, cure, PF temporanei e condizioni con autore, bersaglio e visibilità; permettere annullamento sicuro quando la versione della scheda non è cambiata.
+
+## Ripristinare deploy Vercel dopo rate limit
+
+---
+id: TE-22
+type: tech
+priority: high
+status: todo
+order: 1400
+---
+
+Il commit bb2e5a0 ha Action verde ma Vercel ha risposto Deployment rate limited, retry in 24 hours. Dopo il limite, rilanciare il deploy e verificare che manifest.json pubblico corrisponda al commit; valutare un controllo automatico della versione servita.
