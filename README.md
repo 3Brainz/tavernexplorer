@@ -49,9 +49,14 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
 ## Dati e sincronizzazione
 
 - Schede, bestiario, avventure e ultimi 200 messaggi: storage locale del browser.
+- Owlbear documenta **200 MB di spazio cloud nel piano gratuito** per i dati
+  dell'account ([piani e cloud storage](https://docs.owlbear.rodeo/docs/migration/migrate-from-1-to-2/#cloud-storage)).
+  È distinto dai metadata della stanza usati qui per sincronizzare schede,
+  note, inventario e turni. L'[API room](https://docs.owlbear.rodeo/extensions/apis/room/#setmetadata)
+  documenta per quei metadata un limite totale inferiore a **16 kB**.
 - I metadata condivisi della stanza sono controllati prima di ogni scrittura:
-  TavernExplorer si ferma a 14 KB complessivi, lasciando margine sotto il limite
-  Owlbear di 16 KB. Se lo spazio finisce, la modifica non viene pubblicata e
+  TavernExplorer applica una propria soglia prudenziale di 14.000 byte, lasciando
+  margine sotto il limite documentato. Se lo spazio finisce, la modifica non viene pubblicata e
   l'estensione mostra l'errore. Esportare un TavernPack e ridurre i dati condivisi.
 - Turn order: metadata della stanza Owlbear, sincronizzati con i partecipanti.
   Il GM puo' avanzare o tornare al turno precedente, ritirare l'iniziativa e
@@ -179,12 +184,15 @@ su `main`.
   dati riservati al GM usare l'invio cifrato della copia. I permessi di scrittura
   sono controllati dall'interfaccia, secondo i limiti dei metadata Owlbear.
 - I permessi di modifica sono applicati dall'interfaccia. I metadata della stanza
-  sono scrivibili da ogni client collegato e l'SDK non offre controlli per
-  chiave: proteggono dalle modifiche accidentali, non da un client ostile.
+  sono scrivibili dai client che usano l'estensione; l'[API room documentata](https://docs.owlbear.rodeo/extensions/apis/room/)
+  non descrive ACL per singola chiave. Questi controlli proteggono dalle
+  modifiche accidentali, non da un client ostile.
 - Il controllo versione delle schede rileva modifiche remote già visibili, ma
-  Owlbear non offre scritture atomiche con confronto versione. Per ACL reali,
-  editing simultaneo senza collisioni e dati condivisi oltre 16 KB serve un
-  servizio persistente autenticato.
+  l'API room documenta `getMetadata` e `setMetadata`, senza un'operazione di
+  confronto e scrittura atomica. Le [API assets](https://docs.owlbear.rodeo/extensions/apis/assets/)
+  documentano upload e selezione di immagini e scene, non uno store generico
+  di documenti JSON. La scelta di uno storage più capiente e di ACL applicate
+  dal server richiede una valutazione dedicata delle API e del ciclo di vita dei dati.
 - Lo storico non viene recuperato da chi entra nella stanza dopo l'invio.
 - I riposi aggiornano PF, dadi vita, slot e contatori; esaurimento, riduzioni
   permanenti del massimo dei PF e ripristini speciali di classe richiedono

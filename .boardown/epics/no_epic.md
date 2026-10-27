@@ -38,7 +38,7 @@ order: 300
 
 Filter imported content by name, source, and challenge rating without loading another manual.
 
-## Storage autenticato per dati condivisi
+## Valutare storage condiviso oltre i metadata
 
 ---
 id: TE-15
@@ -48,4 +48,4 @@ status: todo
 order: 700
 ---
 
-Sostituire i metadata Owlbear come storage primario per schede e note con un servizio persistente autenticato, ACL per elemento e scritture atomiche. Migrare i dati esistenti senza perdita.
+Confrontare le API documentate di room, player, scene e assets con i requisiti: dati disponibili tra scene e sessioni, quota, permessi per elemento e modifiche simultanee. I 200 MB cloud del piano gratuito non aumentano il limite dei metadata room. Scegliere uno storage adatto basandosi sulla documentazione; valutare un servizio autenticato solo se le API Owlbear non coprono i requisiti. Pianificare una migrazione senza perdita.

@@ -1,7 +1,8 @@
 import OBR from "@owlbear-rodeo/sdk";
 
-// Owlbear limits the entire room metadata object to 16 KB. Leave headroom for
-// other extensions and the SDK's serialization overhead.
+// OBR.room metadata is documented as under 16 kB total:
+// https://docs.owlbear.rodeo/extensions/apis/room/#setmetadata
+// 14,000 bytes is this app's safety margin, not the account's 200 MB cloud quota.
 export const ROOM_METADATA_BUDGET = 14_000;
 
 export function roomMetadataBytes(value: Record<string, unknown>): number {
