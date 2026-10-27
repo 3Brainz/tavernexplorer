@@ -12,6 +12,9 @@ pnpm install
 pnpm dev
 ```
 
+Su Windows `corepack enable` richiede i permessi di amministratore; in
+alternativa usare `corepack pnpm install` e `corepack pnpm dev`.
+
 Nel profilo Owlbear Rodeo aggiungere l'estensione usando:
 
 ```text
