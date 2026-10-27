@@ -5,6 +5,7 @@ import { decryptGmMessage, encryptGmMessage, isGmEnvelope } from "./privateMessa
 import { canManageNote, canWriteNote, readSharedNotes } from "./sharedNotes";
 import { replaceTurnEntries } from "./turns";
 import { effectiveSheet } from "./effects";
+import { linkedCharacterId } from "./tokenTurns";
 import { writeRoomMetadata } from "./roomMetadata";
 
 const emptyTurns = (): TurnState => ({ round: 1, activeIndex: 0, entries: [] });
@@ -106,29 +107,39 @@ export async function uploadMonsterTokens(monsters: Array<{ name: string; source
   return uploaded;
 }
 
-// Collega il token selezionato a una scheda: il DM sceglie chi e' chi sulla mappa.
-export async function assignCharacterToSelectedToken(characterId: string | null): Promise<string> {
-  if (!OBR.isAvailable) throw new Error("Apri TavernExplorer dentro Owlbear Rodeo");
-  const selected = await OBR.player.getSelection();
-  const tokenId = selected?.[0];
-  if (!tokenId) throw new Error("Seleziona prima un token sulla mappa");
-  let tokenName = "token";
+export interface CharacterToken { tokenId: string; tokenName: string; characterId?: string; ownerId: string }
+
+export async function setTokenCharacter(tokenId: string, characterId: string | null): Promise<void> {
+  if (!OBR.isAvailable || !(await OBR.scene.isReady())) throw new Error("Apri una scena Owlbear per collegare il token");
+  if (await OBR.player.getRole() !== "GM") throw new Error("Solo il GM può collegare i token alle schede");
+  const token = (await OBR.scene.items.getItems([tokenId]))[0];
+  if (!token || token.layer !== "CHARACTER") throw new Error("Il token non è più nella scena aperta");
+  const sheet = characterId ? (await getSharedSheets()).find((entry) => entry.sheet.id === characterId) : undefined;
+  if (characterId && !sheet) throw new Error("La scheda non è più condivisa nella stanza");
   await OBR.scene.items.updateItems([tokenId], (items) => {
     for (const item of items) {
-      tokenName = item.name || tokenName;
       if (characterId) item.metadata[TOKEN_META_KEY] = { characterId };
       else delete item.metadata[TOKEN_META_KEY];
+      if (sheet) item.createdUserId = sheet.ownerId;
     }
   });
-  return tokenName;
 }
 
-export async function getTokenAssignments(): Promise<Array<{ tokenId: string; tokenName: string; characterId: string }>> {
-  if (!OBR.isAvailable || !(await OBR.scene.isReady())) return [];
-  return (await OBR.scene.items.getItems()).flatMap((item) => {
-    const characterId = (item.metadata[TOKEN_META_KEY] as { characterId?: string } | undefined)?.characterId;
-    return characterId ? [{ tokenId: item.id, tokenName: item.name || "Token", characterId }] : [];
+export async function setTokenOwner(tokenId: string, ownerId: string): Promise<void> {
+  if (!OBR.isAvailable || !(await OBR.scene.isReady())) throw new Error("Apri una scena Owlbear per assegnare il token");
+  if (await OBR.player.getRole() !== "GM") throw new Error("Solo il GM può assegnare i token");
+  const token = (await OBR.scene.items.getItems([tokenId]))[0];
+  if (!token || token.layer !== "CHARACTER") throw new Error("Il token non è più nella scena aperta");
+  await OBR.scene.items.updateItems([tokenId], (items) => {
+    for (const item of items) item.createdUserId = ownerId;
   });
+}
+
+export async function getCharacterTokens(): Promise<CharacterToken[]> {
+  if (!OBR.isAvailable || !(await OBR.scene.isReady())) return [];
+  return (await OBR.scene.items.getItems((item) => item.layer === "CHARACTER"))
+    .map((item) => ({ tokenId: item.id, tokenName: item.name || "Token senza nome", characterId: linkedCharacterId(item), ownerId: item.createdUserId }))
+    .sort((a, b) => Number(Boolean(a.characterId)) - Number(Boolean(b.characterId)) || a.tokenName.localeCompare(b.tokenName, "it"));
 }
 
 export async function focusTurnToken(tokenId: string): Promise<void> {
@@ -140,11 +151,23 @@ export async function focusTurnToken(tokenId: string): Promise<void> {
 
 // Riassegna il proprietario di una scheda condivisa. Il nuovo owner potra' modificarla.
 export async function assignSheetToPlayer(sheetId: string, ownerId: string, ownerName: string): Promise<void> {
-  if (!OBR.isAvailable) return;
+  if (!OBR.isAvailable) throw new Error("Apri TavernExplorer dentro Owlbear Rodeo");
   if (await OBR.player.getRole() !== "GM") throw new Error("Solo il GM può riassegnare le schede");
   const existing = await getSharedSheets();
+  const sheet = existing.find((entry) => entry.sheet.id === sheetId);
+  if (!sheet) throw new Error("La scheda non è più condivisa nella stanza");
+  if (sheet.ownerId === ownerId) return;
   const next = existing.map((entry) => entry.sheet.id === sheetId ? { ...entry, ownerId, ownerName, editors: entry.editors.filter((id) => id !== ownerId), updatedAt: Math.max(Date.now(), entry.updatedAt + 1) } : entry);
   await writeRoomMetadata({ [SHEETS_META_KEY]: next });
+  if (await OBR.scene.isReady()) {
+    try {
+      await OBR.scene.items.updateItems((item) => item.layer === "CHARACTER" && linkedCharacterId(item) === sheetId, (items) => {
+        for (const item of items) item.createdUserId = ownerId;
+      });
+    } catch {
+      throw new Error("Scheda trasferita, ma i token della scena non sono stati aggiornati. Assegna il proprietario dal loro elenco.");
+    }
+  }
 }
 
 // Mostra il risultato sulla mappa attaccato al token del personaggio; sparisce da solo.

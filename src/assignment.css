@@ -1,0 +1,17 @@
+.assign-panel{display:grid;gap:.7rem}
+.assign-panel h2,.assign-panel h3,.assign-panel p{margin:0}
+.assign-panel h3{font-size:.85rem;margin-top:.4rem}
+.assign-panel>p,.assign-empty,.assign-count{font-size:.78rem;color:hsl(var(--muted-foreground))}
+.assign-grid{display:grid;gap:.5rem}
+.assign-item{display:grid;grid-template-columns:minmax(0,1fr) minmax(10rem,1.2fr);align-items:center;gap:.55rem;border:1px solid hsl(var(--border));border-radius:var(--radius);padding:.65rem}
+.assign-item>span{display:grid;gap:.15rem;min-width:0}
+.assign-item strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem}
+.assign-item small{color:hsl(var(--muted-foreground));font-size:.72rem}
+.assign-item .ui-select{width:100%;min-width:0}
+.assign-heading{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:.5rem}
+.assign-heading h3{margin:0}
+.assign-token-item{grid-template-columns:1fr}
+.assign-token-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:.3rem;min-width:0}
+.assign-token-actions label{display:grid;gap:.2rem;min-width:0}
+.assign-token-actions .ui-button{min-width:2rem}
+@media(max-width:480px){.assign-item{grid-template-columns:1fr}}

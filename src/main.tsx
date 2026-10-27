@@ -8,6 +8,7 @@ import "./dialog.css";
 import "./permissions.css";
 import "./party.css";
 import "./editor.css";
+import "./assignment.css";
 import "./floating.css";
 import "./refresh.css";
 import "./notes.css";

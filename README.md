@@ -92,10 +92,18 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
   registrato nei messaggi con la visibilità selezionata.
 - Le mappe individuate nelle avventure 5e.tools possono essere caricate
   direttamente come scene Owlbear.
-- Collegamento token/scheda: metadata del token. Dal Party il DM assegna una
-  scheda al token selezionato, la scollega o ne trasferisce la proprieta' a un
-  altro giocatore. Il menu contestuale del token apre la scheda collegata;
-  non assegna automaticamente la scheda attiva ai token scollegati.
+- Collegamento token/scheda: metadata del token. Nel Party il GM vede ogni
+  personaggio con il suo proprietario e tutti i token dello strato Personaggi
+  della scena, inclusi quelli senza scheda. Può cercare un token, collegarlo
+  dal relativo menu o cambiare il proprietario della scheda accanto al nome.
+  Le liste si aggiornano quando cambia la scena. Il menu contestuale del token
+  apre la scheda collegata; non assegna automaticamente la scheda attiva ai
+  token scollegati. Collegando un token, il proprietario Owlbear del token viene
+  allineato al proprietario della scheda. Cambiando il proprietario della scheda,
+  l'estensione aggiorna i token collegati nella scena aperta. Il GM può anche
+  scegliere un proprietario diverso per un singolo token. Il controllo esclusivo
+  richiede il permesso Owlbear "Owner Only" per lo strato Personaggi
+  ([documentazione](https://docs.owlbear.rodeo/docs/permissions/)).
 - Dal menu contestuale si possono aggiungere o rimuovere più token dal tracker.
   Per ogni token collegato a una scheda disponibile viene tirata l'iniziativa
   usando il suo bonus; per gli altri viene chiesto un valore. Il pulsante
@@ -175,7 +183,7 @@ La GitHub Action esegue build, lint e test su ogni push a `main` e sulle pull
 request. Il progetto Vercel collegato a GitHub pubblica automaticamente i push
 su `main`.
 
-## Limiti della versione 0.6.1
+## Limiti della versione 0.6.2
 
 - L'importatore richiede il blocco `normalized` di `roll20-sheet-export`.
 - Le formule ricavate dalle descrizioni vengono segnalate nelle note d'import.
