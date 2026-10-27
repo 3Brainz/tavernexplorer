@@ -9,6 +9,7 @@ import "./permissions.css";
 import "./party.css";
 import "./editor.css";
 import "./assignment.css";
+import "./hitPoints.css";
 import "./floating.css";
 import "./refresh.css";
 import "./notes.css";

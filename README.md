@@ -108,6 +108,11 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
   Per ogni token collegato a una scheda disponibile viene tirata l'iniziativa
   usando il suo bonus; per gli altri viene chiesto un valore. Il pulsante
   “Trova sulla mappa” nel tracker centra il token nella scena aperta.
+- Dalla scheda aperta dal token e dal Party si applicano danni, cure e PF
+  temporanei indicando una quantità. L'anteprima mostra i PF risultanti;
+  i danni consumano prima i PF temporanei, le cure si fermano al massimo
+  effettivo e azzerano i salvataggi morte quando restituiscono PF. I PF
+  temporanei non si sommano. I casi speciali dei danni a 0 PF restano manuali.
 - Import bestiario: dopo aver caricato un manuale o un file JSON, si scelgono
   uno o piu' mostri. Solo quelli selezionati vengono salvati e caricati come
   token `CHARACTER` con nome `beasts/<nome>`. Quando il mirror non espone
@@ -183,7 +188,7 @@ La GitHub Action esegue build, lint e test su ogni push a `main` e sulle pull
 request. Il progetto Vercel collegato a GitHub pubblica automaticamente i push
 su `main`.
 
-## Limiti della versione 0.6.2
+## Limiti della versione 0.7.0
 
 - L'importatore richiede il blocco `normalized` di `roll20-sheet-export`.
 - Le formule ricavate dalle descrizioni vengono segnalate nelle note d'import.

@@ -1,0 +1,10 @@
+.hit-point-control{display:grid;gap:.55rem}
+.hit-point-heading{display:flex;flex-wrap:wrap;align-items:baseline;gap:.55rem}
+.hit-point-heading h2{margin:0 auto 0 0}
+.hit-point-heading strong{font-size:1.2rem;color:hsl(var(--primary))}
+.hit-point-heading span{font-size:.75rem;color:hsl(var(--muted-foreground))}
+.hit-point-form{display:grid;grid-template-columns:minmax(0,1fr) 5rem auto;gap:.45rem}
+.hit-point-form .ui-select,.hit-point-form .ui-input{width:100%;min-width:0}
+.hit-point-preview,.hit-point-note,.hit-point-warning{margin:0;font-size:.75rem;color:hsl(var(--muted-foreground))}
+.hit-point-warning{color:hsl(var(--destructive))}
+@media(max-width:410px){.hit-point-form{grid-template-columns:minmax(0,1fr) 4.5rem}.hit-point-form .ui-button{grid-column:1/-1}}
