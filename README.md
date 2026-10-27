@@ -79,6 +79,12 @@ modifiche incompatibili è necessario aumentare `version` in `package.json` e in
   e danni senza riscrivere i valori di base. Gli oggetti nello zaino e gli
   effetti disattivati non si applicano. La durata degli effetti sulla scheda
   si aggiorna manualmente; le condizioni del tracker scadono per round.
+- La scheda include contatori personalizzati con recupero a riposo breve,
+  lungo o mai. Il riposo breve può spendere dadi vita e recupera i contatori
+  assegnati; il riposo lungo ripristina PF, slot e dadi vita, e azzera i PF temporanei
+  secondo il profilo di regole. Per la Magia del Patto si può scegliere il
+  recupero degli slot al riposo breve. Ogni riposo richiede conferma e viene
+  registrato nei messaggi con la visibilità selezionata.
 - Le mappe individuate nelle avventure 5e.tools possono essere caricate
   direttamente come scene Owlbear.
 - Collegamento token/scheda: metadata del token. Dal Party il DM assegna una
@@ -160,7 +166,7 @@ La GitHub Action esegue build, lint e test su ogni push a `main` e sulle pull
 request. Il progetto Vercel collegato a GitHub pubblica automaticamente i push
 su `main`.
 
-## Limiti della versione 0.5
+## Limiti della versione 0.6
 
 - L'importatore richiede il blocco `normalized` di `roll20-sheet-export`.
 - Le formule ricavate dalle descrizioni vengono segnalate nelle note d'import.
@@ -180,3 +186,6 @@ su `main`.
   editing simultaneo senza collisioni e dati condivisi oltre 16 KB serve un
   servizio persistente autenticato.
 - Lo storico non viene recuperato da chi entra nella stanza dopo l'invio.
+- I riposi aggiornano PF, dadi vita, slot e contatori; esaurimento, riduzioni
+  permanenti del massimo dei PF e ripristini speciali di classe richiedono
+  ancora gestione manuale nella scheda.

@@ -9,6 +9,14 @@ function requireShape(ok: boolean, path: string): void {
   if (!ok) throw new Error(`Dato non valido: ${path}`);
 }
 
+function validateCounter(value: unknown): boolean {
+  const counter = record(value);
+  return !!counter && typeof counter.id === "string" && typeof counter.name === "string"
+    && typeof counter.current === "number" && Number.isInteger(counter.current) && counter.current >= 0
+    && typeof counter.max === "number" && Number.isInteger(counter.max) && counter.max >= 1 && counter.current <= counter.max
+    && (counter.recovery === "none" || counter.recovery === "short" || counter.recovery === "long");
+}
+
 export function parseCharacterSheet(value: unknown): CharacterSheet {
   const sheet = record(value);
   const identity = record(sheet?.identity);
@@ -18,7 +26,9 @@ export function parseCharacterSheet(value: unknown): CharacterSheet {
   requireShape(sheet?.schemaVersion === 1 && typeof sheet.id === "string" && !!sheet.id && typeof sheet.name === "string" && !!sheet.name, "scheda: id, nome o versione");
   requireShape(!!identity && !!combat && !!hp && !!spellcasting, "scheda: identità, combattimento o magia");
   requireShape(typeof hp?.current === "number" && typeof hp.max === "number" && !!record(combat?.hitDice) && !!record(combat?.deathSaves) && !!record(sheet?.abilities) && !!record(sheet?.skills) && !!record(spellcasting?.slots), "scheda: statistiche");
+  requireShape(spellcasting?.slotRecovery === undefined || spellcasting.slotRecovery === "short" || spellcasting.slotRecovery === "long", "scheda: recupero slot");
   for (const key of ["actions", "spells", "inventory", "traits", "importWarnings"]) requireShape(Array.isArray(sheet?.[key]), `scheda: ${key}`);
+  requireShape(sheet?.counters === undefined || Array.isArray(sheet.counters) && sheet.counters.every(validateCounter), "scheda: contatori");
   requireShape(!!record(sheet?.currency), "scheda: monete");
   return sheet as unknown as CharacterSheet;
 }

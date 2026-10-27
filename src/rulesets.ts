@@ -7,6 +7,8 @@ export interface Ruleset {
   proficiencyBonus(level: number): number;
   spellSaveDc(abilityModifier: number, proficiencyBonus: number): number;
   criticalDamage(formula: string): string;
+  hitDiceRecoveredOnLongRest(maximum: number): number;
+  shortRestMinimumHealing: number;
   normalizeAfterImport(sheet: CharacterSheet): string[];
 }
 
@@ -27,6 +29,8 @@ export const dnd55: Ruleset = {
     return 8 + abilityModifier + proficiencyBonus;
   },
   criticalDamage: doubleDamageDice,
+  hitDiceRecoveredOnLongRest(maximum) { return maximum; },
+  shortRestMinimumHealing: 1,
   normalizeAfterImport(sheet) {
     const warnings: string[] = [];
     const expectedPb = this.proficiencyBonus(sheet.identity.level);
@@ -41,7 +45,7 @@ export const dnd55: Ruleset = {
   },
 };
 
-export const dnd5e: Ruleset = { ...dnd55, id: "dnd-5e-2014", version: "2014.1", label: "D&D 5e (regole 2014)" };
+export const dnd5e: Ruleset = { ...dnd55, id: "dnd-5e-2014", version: "2014.1", label: "D&D 5e (regole 2014)", hitDiceRecoveredOnLongRest(maximum) { return Math.max(1, Math.floor(maximum / 2)); }, shortRestMinimumHealing: 0 };
 export const RULESETS: Record<string, Ruleset> = { [dnd55.id]: dnd55, [dnd5e.id]: dnd5e };
 export const DEFAULT_RULESET = dnd55;
 

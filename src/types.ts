@@ -57,6 +57,15 @@ export interface CharacterEffect {
   remainingRounds?: number;
 }
 
+export type CounterRecovery = "none" | "short" | "long";
+export interface ResourceCounter {
+  id: string;
+  name: string;
+  current: number;
+  max: number;
+  recovery: CounterRecovery;
+}
+
 export interface TraitEntry {
   id: string;
   name: string;
@@ -99,12 +108,14 @@ export interface CharacterSheet {
     ability: string;
     saveDc: number;
     attackBonus: number;
+    slotRecovery?: "short" | "long";
     slots: Record<string, { total: number; used: number }>;
   };
   actions: ActionEntry[];
   spells: SpellEntry[];
   inventory: InventoryEntry[];
   effects?: CharacterEffect[];
+  counters?: ResourceCounter[];
   traits: TraitEntry[];
   currency: Record<string, number>;
   biography: string;
