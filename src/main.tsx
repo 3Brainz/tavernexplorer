@@ -17,4 +17,9 @@ import "./effects.css";
 import "./resources.css";
 import "./turns.css";
 
+if (import.meta.env.DEV) {
+  document.documentElement.dataset.env = "dev";
+  void import("./dev.css");
+}
+
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);

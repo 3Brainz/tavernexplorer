@@ -258,7 +258,7 @@ export default function App() {
     {OBR.isAvailable && (floatingView ? <ResizeHandle panel={floatingView}/> : !new URLSearchParams(window.location.search).has("token") && <ResizeHandle/>)}
     {!floatingView && <>
     <header className="topbar">
-      <div className="brand"><img src="/icon.svg" alt=""/><div><strong>TavernExplorer</strong><small>{DEFAULT_RULESET.label}</small></div></div>
+      <div className="brand"><img src={import.meta.env.DEV ? "/dev/icon-dev.svg" : "/icon.svg"} alt=""/><div><strong>TavernExplorer{import.meta.env.DEV && <span className="dev-badge">DEV</span>}</strong><small>{DEFAULT_RULESET.label}</small></div></div>
       <select value={activeId ?? ""} onChange={(event) => { setActiveId(event.target.value || null); if (event.target.value) setTab("sheet"); }}>
         <option value="">Nessuna scheda</option>{characters.map((character) => <option key={character.id} value={character.id}>{character.name}</option>)}
       </select>
